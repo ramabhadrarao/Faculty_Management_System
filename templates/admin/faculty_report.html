@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Report - Faculty Management System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Faculty Report</h2>
+                <div class="page-pretitle">Comprehensive faculty report across all departments</div>
+            </div>
+            <div class="col-auto ms-auto">
+                <div class="btn-list">
+                    <button type="button" class="btn btn-primary d-none d-sm-inline-block" onclick="window.print();">
+                        <i class="ti ti-printer"></i> Print Report
+                    </button>
+                    <a href="#" class="btn btn-outline-primary" onclick="exportTableToCSV('faculty_report.csv')">
+                        <i class="ti ti-file-export"></i> Export to CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-deck row-cards">
+            <!-- Statistics Cards -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="subheader">Total Faculty</div>
+                        </div>
+                        <div class="h1 mb-3">{{ status_counts.total }}</div>
+                        <div class="d-flex mb-2">
+                            <div>Faculty Members</div>
+                            <div class="ms-auto">
+                                <span class="text-green">
+                                    <i class="ti ti-users"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="subheader">Pending Approvals</div>
+                        </div>
+                        <div class="h1 mb-3">{{ status_counts.pending }}</div>
+                        <div class="d-flex mb-2">
+                            <div>Awaiting Approval</div>
+                            <div class="ms-auto">
+                                <a href="{{ url_for('admin.pending_approvals') }}" class="text-yellow">
+                                    <i class="ti ti-checklist"></i> View
+                                </a>
+                            </div>
+                        </div>
+                        <div class="progress progress-sm">
+                            <div class="progress-bar bg-yellow" style="width: {{ (status_counts.pending / status_counts.total * 100) if status_counts.total > 0 else 0 }}%" role="progressbar" aria-valuenow="{{ status_counts.pending }}" aria-valuemin="0" aria-valuemax="{{ status_counts.total }}" aria-label="Pending">
+                                <span class="visually-hidden">{{ status_counts.pending }} Pending</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="subheader">Approved Faculty</div>
+                        </div>
+                        <div class="h1 mb-3">{{ status_counts.approved }}</div>
+                        <div class="d-flex mb-2">
+                            <div>Approved Profiles</div>
+                            <div class="ms-auto">
+                                <span class="text-green">
+                                    <i class="ti ti-check"></i> {{ ((status_counts.approved / status_counts.total) * 100) | int if status_counts.total > 0 else 0 }}%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="progress progress-sm">
+                            <div class="progress-bar bg-green" style="width: {{ (status_counts.approved / status_counts.total * 100) if status_counts.total > 0 else 0 }}%" role="progressbar" aria-valuenow="{{ status_counts.approved }}" aria-valuemin="0" aria-valuemax="{{ status_counts.total }}" aria-label="Approved">
+                                <span class="visually-hidden">{{ status_counts.approved }} Approved</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="subheader">Frozen Profiles</div>
+                        </div>
+                        <div class="h1 mb-3">{{ status_counts.frozen }}</div>
+                        <div class="d-flex mb-2">
+                            <div>Frozen Profiles</div>
+                            <div class="ms-auto">
+                                <a href="{{ url_for('admin.frozen_profiles') }}" class="text-azure">
+                                    <i class="ti ti-lock"></i> View
+                                </a>
+                            </div>
+                        </div>
+                        <div class="progress progress-sm">
+                            <div class="progress-bar bg-azure" style="width: {{ (status_counts.frozen / status_counts.total * 100) if status_counts.total > 0 else 0 }}%" role="progressbar" aria-valuenow="{{ status_counts.frozen }}" aria-valuemin="0" aria-valuemax="{{ status_counts.total }}" aria-label="Frozen">
+                                <span class="visually-hidden">{{ status_counts.frozen }} Frozen</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Department Faculty Chart -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Faculty Distribution by Department</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="department-chart" style="height: 300px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Department Statistics Table -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Department Statistics</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-vcenter card-table" id="department-table">
+                                <thead>
+                                    <tr>
+                                        <th>Department</th>
+                                        <th>Faculty Count</th>
+                                        <th>HOD</th>
+                                        <th>Pending Approvals</th>
+                                        <th>Frozen Profiles</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for dept_stat in department_stats %}
+                                        <tr>
+                                            <td>{{ dept_stat.department.department_name }}</td>
+                                            <td>
+                                                <span class="badge bg-azure">{{ dept_stat.faculty_count }}</span>
+                                            </td>
+                                            <td>
+                                                {% set hod = None %}
+                                                {% for faculty in dept_stat.department.faculty_members %}
+                                                    {% if faculty.user and faculty.user.is_hod %}
+                                                        {% set hod = faculty %}
+                                                        {% break %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                                
+                                                {% if hod %}
+                                                    <div class="d-flex py-1 align-items-center">
+                                                        <span class="avatar avatar-xs me-2" style="background-image: url({{ url_for('static', filename='uploads/' + hod.photo_attachment.file_path) if hod.photo_attachment_id else url_for('static', filename='images/default-avatar.png') }})"></span>
+                                                        <div>{{ hod.full_name }}</div>
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted">No HOD Assigned</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% set pending_count = namespace(count=0) %}
+                                                {% for faculty in dept_stat.department.faculty_members %}
+                                                    {% if faculty.profile_status == 'pending' %}
+                                                        {% set pending_count.count = pending_count.count + 1 %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                                
+                                                {% if pending_count.count > 0 %}
+                                                    <span class="badge bg-yellow">{{ pending_count.count }} Pending</span>
+                                                {% else %}
+                                                    <span class="badge bg-green">None</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% set frozen_count = namespace(count=0) %}
+                                                {% for faculty in dept_stat.department.faculty_members %}
+                                                    {% if faculty.profile_status == 'frozen' %}
+                                                        {% set frozen_count.count = frozen_count.count + 1 %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                                
+                                                {% if frozen_count.count > 0 %}
+                                                    <span class="badge bg-azure">{{ frozen_count.count }} Frozen</span>
+                                                {% else %}
+                                                    <span class="badge bg-green">None</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="#" class="btn btn-sm btn-outline-primary">
+                                                    <i class="ti ti-report"></i> Detailed Report
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activities Table -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Recent Faculty Activities</h3>
+                    </div>
+                    <div class="card-body">
+                        {% if recent_activities %}
+                            <div class="table-responsive">
+                                <table class="table table-vcenter card-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Faculty</th>
+                                            <th>Department</th>
+                                            <th>Activity</th>
+                                            <th>Type</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for activity in recent_activities %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex py-1 align-items-center">
+                                                        <span class="avatar avatar-xs me-2" style="background-image: url({{ url_for('static', filename='uploads/' + activity.faculty.photo_attachment.file_path) if activity.faculty.photo_attachment_id else url_for('static', filename='images/default-avatar.png') }})"></span>
+                                                        <div>{{ activity.faculty.full_name }}</div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ activity.faculty.department.department_name if activity.faculty.department else 'N/A' }}</td>
+                                                <td>{{ activity.activity_title }}</td>
+                                                <td>{{ activity.type }}</td>
+                                                <td>{{ activity.date.strftime('%d %b, %Y') if activity.date else 'N/A' }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="empty">
+                                <div class="empty-icon">
+                                    <i class="ti ti-activity"></i>
+                                </div>
+                                <p class="empty-title">No recent activities</p>
+                                <p class="empty-subtitle text-muted">
+                                    There have been no faculty activities recorded recently.
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Department Chart
+        var options = {
+            series: [{
+                name: 'Faculty Count',
+                data: [
+                    {% for dept_stat in department_stats %}
+                        {{ dept_stat.faculty_count }},
+                    {% endfor %}
+                ]
+            }],
+            chart: {
+                type: 'bar',
+                height: 300,
+                toolbar: {
+                    show: false,
+                }
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: false,
+                    columnWidth: '55%',
+                    borderRadius: 5,
+                }
+            },
+            dataLabels: {
+                enabled: false
+            },
+            stroke: {
+                show: true,
+                width: 2,
+                colors: ['transparent']
+            },
+            xaxis: {
+                categories: [
+                    {% for dept_stat in department_stats %}
+                        '{{ dept_stat.department.department_name }}',
+                    {% endfor %}
+                ],
+            },
+            fill: {
+                opacity: 1
+            },
+            tooltip: {
+                y: {
+                    formatter: function (val) {
+                        return val + " faculty members"
+                    }
+                }
+            },
+            colors: ['#4263eb']
+        };
+
+        var chart = new ApexCharts(document.querySelector("#department-chart"), options);
+        chart.render();
+    });
+    
+    // Export to CSV function
+    function exportTableToCSV(filename) {
+        var csv = [];
+        var rows = document.querySelectorAll("#department-table tr");
+        
+        for (var i = 0; i < rows.length; i++) {
+            var row = [], cols = rows[i].querySelectorAll("td, th");
+            
+            for (var j = 0; j < cols.length; j++) 
+                row.push(cols[j].innerText);
+            
+            csv.push(row.join(","));        
+        }
+
+        // Download CSV file
+        downloadCSV(csv.join("\n"), filename);
+    }
+
+    function downloadCSV(csv, filename) {
+        var csvFile;
+        var downloadLink;
+
+        // CSV file
+        csvFile = new Blob([csv], {type: "text/csv"});
+
+        // Download link
+        downloadLink = document.createElement("a");
+
+        // File name
+        downloadLink.download = filename;
+
+        // Create a link to the file
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+
+        // Hide download link
+        downloadLink.style.display = "none";
+
+        // Add the link to DOM
+        document.body.appendChild(downloadLink);
+
+        // Click download link
+        downloadLink.click();
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Create Faculty Profile - Faculty Management System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Create Faculty Profile</h2>
+                <div class="page-pretitle">Enter your basic information</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-cards">
+            <div class="col-12">
+                <form action="{{ url_for('faculty.create_profile') }}" method="POST" enctype="multipart/form-data" class="card">
+                    {{ form.csrf_token }}
+                    <div class="card-header">
+                        <h3 class="card-title">Basic Information</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">Registration Number</label>
+                                <input type="text" name="regdno" class="form-control" placeholder="Registration Number" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Department</label>
+                                <select name="department_id" class="form-select">
+                                    <option value="">Select Department</option>
+                                    {% for department in departments %}
+                                        <option value="{{ department.department_id }}">{{ department.department_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">First Name</label>
+                                <input type="text" name="first_name" class="form-control" placeholder="First Name" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" name="last_name" class="form-control" placeholder="Last Name">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Gender</label>
+                                <select name="gender" class="form-select">
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date of Birth</label>
+                                <input type="date" name="dob" class="form-control">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Contact Number</label>
+                                <input type="text" name="contact_no" class="form-control" placeholder="Contact Number">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">Email</label>
+                                <input type="email" name="email" class="form-control" placeholder="Email" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">Join Date</label>
+                                <input type="date" name="join_date" class="form-control" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Address</label>
+                            <textarea name="address" class="form-control" rows="3" placeholder="Address"></textarea>
+                        </div>
+                        
+                        <div class="hr-text">Document Uploads</div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="form-label">Profile Photo</div>
+                                <input type="file" name="photo" class="form-control" accept="image/*">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-label">Aadhar Card</div>
+                                <input type="file" name="aadhar" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-label">PAN Card</div>
+                                <input type="file" name="pan" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <button type="submit" class="btn btn-primary">Create Profile</button>
+                        <a href="{{ url_for('faculty.dashboard') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

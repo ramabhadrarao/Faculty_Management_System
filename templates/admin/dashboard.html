@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Faculty Management System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Admin Dashboard</h2>
+                <div class="page-pretitle">Overview and Statistics</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-deck row-cards">
+            <!-- Statistics Cards -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="subheader">Total Faculty</div>
+                        </div>
+                        <div class="h1 mb-3">{{ faculty_count }}</div>
+                        <div class="d-flex mb-2">
+                            <div>Faculty Members</div>
+                            <div class="ms-auto">
+                                <span class="text-green">
+                                    <i class="ti ti-users"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="subheader">Departments</div>
+                        </div>
+                        <div class="h1 mb-3">{{ department_count }}</div>
+                        <div class="d-flex mb-2">
+                            <div>Academic Departments</div>
+                            <div class="ms-auto">
+                                <a href="{{ url_for('admin.manage_departments') }}" class="text-muted">
+                                    <i class="ti ti-building"></i> Manage
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="subheader">Pending Approvals</div>
+                        </div>
+                        <div class="h1 mb-3">{{ pending_count }}</div>
+                        <div class="d-flex mb-2">
+                            <div>Awaiting Review</div>
+                            <div class="ms-auto">
+                                <a href="{{ url_for('admin.pending_approvals') }}" class="text-yellow">
+                                    <i class="ti ti-checklist"></i> View
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="subheader">Frozen Profiles</div>
+                        </div>
+                        <div class="h1 mb-3">{{ frozen_count }}</div>
+                        <div class="d-flex mb-2">
+                            <div>Frozen Faculty Profiles</div>
+                            <div class="ms-auto">
+                                <a href="{{ url_for('admin.frozen_profiles') }}" class="text-azure">
+                                    <i class="ti ti-lock"></i> Manage
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Role Distribution Chart -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Role Distribution</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="role-distribution-chart" style="height: 250px;"></div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <div class="d-flex align-items-center">
+                                    <span class="status-dot status-green d-block me-2"></span>
+                                    <span>Faculty: {{ role_distribution.faculty }}</span>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <div class="d-flex align-items-center">
+                                    <span class="status-dot status-azure d-block me-2"></span>
+                                    <span>HOD: {{ role_distribution.hod }}</span>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <div class="d-flex align-items-center">
+                                    <span class="status-dot status-yellow d-block me-2"></span>
+                                    <span>Principal: {{ role_distribution.principal }}</span>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <div class="d-flex align-items-center">
+                                    <span class="status-dot status-red d-block me-2"></span>
+                                    <span>Admin: {{ role_distribution.admin }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Card -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Quick Actions</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <a href="{{ url_for('admin.manage_users') }}" class="btn btn-outline-primary w-100">
+                                    <i class="ti ti-users me-2"></i> Manage Users
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="{{ url_for('admin.manage_departments') }}" class="btn btn-outline-azure w-100">
+                                    <i class="ti ti-building me-2"></i> Manage Departments
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="{{ url_for('admin.manage_roles') }}" class="btn btn-outline-green w-100">
+                                    <i class="ti ti-key me-2"></i> Manage Roles
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="{{ url_for('admin.faculty_report') }}" class="btn btn-outline-yellow w-100">
+                                    <i class="ti ti-report me-2"></i> Generate Report
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="{{ url_for('admin.pending_approvals') }}" class="btn btn-outline-orange w-100">
+                                    <i class="ti ti-checklist me-2"></i> Pending Approvals
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="{{ url_for('admin.assign_hod') }}" class="btn btn-outline-purple w-100">
+                                    <i class="ti ti-user-check me-2"></i> Assign HOD
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Faculty Registrations -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Recent Faculty Registrations</h3>
+                    </div>
+                    <div class="card-body">
+                        {% if recent_faculty %}
+                            <div class="table-responsive">
+                                <table class="table table-vcenter card-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Faculty Name</th>
+                                            <th>Email</th>
+                                            <th>Department</th>
+                                            <th>Registered On</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for faculty in recent_faculty %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <span class="avatar me-2 avatar-sm rounded" style="background-image: url({{ url_for('static', filename='uploads/' + faculty.photo_attachment.file_path) if faculty.photo_attachment_id else url_for('static', filename='images/default-avatar.png') }})"></span>
+                                                        <div>{{ faculty.full_name }}</div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ faculty.email }}</td>
+                                                <td>{{ faculty.department.department_name if faculty.department else 'N/A' }}</td>
+                                                <td>{{ faculty.created_at.strftime('%d %b, %Y') }}</td>
+                                                <td>
+                                                    {% if faculty.profile_status == 'pending' %}
+                                                        <span class="badge bg-yellow">Pending</span>
+                                                    {% elif faculty.profile_status == 'approved' %}
+                                                        <span class="badge bg-green">Approved</span>
+                                                    {% elif faculty.profile_status == 'frozen' %}
+                                                        <span class="badge bg-azure">Frozen</span>
+                                                    {% elif faculty.profile_status == 'unfrozen' %}
+                                                        <span class="badge bg-blue">Unfrozen</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <a href="{{ url_for('faculty.view_profile', faculty_id=faculty.faculty_id) }}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="ti ti-eye"></i> View
+                                                    </a>
+                                                    {% if faculty.profile_status == 'pending' %}
+                                                        <a href="{{ url_for('faculty.approve_profile', faculty_id=faculty.faculty_id) }}" class="btn btn-sm btn-success">
+                                                            <i class="ti ti-check"></i> Approve
+                                                        </a>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="empty">
+                                <div class="empty-icon">
+                                    <i class="ti ti-users"></i>
+                                </div>
+                                <p class="empty-title">No recent registrations</p>
+                                <p class="empty-subtitle text-muted">
+                                    There have been no recent faculty registrations.
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Role Distribution Chart
+        var options = {
+            series: [
+                {{ role_distribution.faculty }},
+                {{ role_distribution.hod }},
+                {{ role_distribution.principal }},
+                {{ role_distribution.admin }}
+            ],
+            chart: {
+                type: 'donut',
+                height: 250
+            },
+            labels: ['Faculty', 'HOD', 'Principal', 'Admin'],
+            colors: ['#4bc0c0', '#36a2eb', '#ffcd56', '#ff6384'],
+            responsive: [{
+                breakpoint: 480,
+                options: {
+                    chart: {
+                        width: 200
+                    },
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }]
+        };
+
+        var chart = new ApexCharts(document.querySelector("#role-distribution-chart"), options);
+        chart.render();
+    });
+</script>
+{% endblock %}

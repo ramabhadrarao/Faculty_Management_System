@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Frozen Profiles - Faculty Management System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Frozen Profiles</h2>
+                <div class="page-pretitle">Faculty Profiles in Frozen State</div>
+            </div>
+            <div class="col-auto ms-auto">
+                <div class="btn-list">
+                    <a href="#" class="btn btn-warning d-none d-sm-inline-block" id="unfreeze-all-btn" data-bs-toggle="modal" data-bs-target="#modal-unfreeze-all">
+                        <i class="ti ti-lock-open"></i> Unfreeze Selected
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-cards">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Frozen Faculty Profiles</h3>
+                        <div class="card-actions">
+                            <div class="input-icon">
+                                <input type="text" class="form-control" placeholder="Search...">
+                                <span class="input-icon-addon">
+                                    <i class="ti ti-search"></i>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% if frozen_faculty %}
+                            <div class="table-responsive">
+                                <table class="table table-vcenter card-table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th class="w-1">
+                                                <input class="form-check-input m-0 align-middle" type="checkbox" id="select-all">
+                                            </th>
+                                            <th>Faculty Name</th>
+                                            <th>Registration No.</th>
+                                            <th>Department</th>
+                                            <th>Email</th>
+                                            <th>Frozen Since</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for faculty in frozen_faculty %}
+                                            <tr>
+                                                <td>
+                                                    <input class="form-check-input m-0 align-middle faculty-checkbox" type="checkbox" value="{{ faculty.faculty_id }}" aria-label="Select faculty">
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <span class="avatar me-2 avatar-sm rounded" style="background-image: url({{ url_for('static', filename='uploads/' + faculty.photo_attachment.file_path) if faculty.photo_attachment_id else url_for('static', filename='images/default-avatar.png') }})"></span>
+                                                        <div>{{ faculty.full_name }}</div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ faculty.regdno }}</td>
+                                                <td>{{ faculty.department.department_name if faculty.department else 'N/A' }}</td>
+                                                <td>{{ faculty.email }}</td>
+                                                <td>{{ faculty.updated_at.strftime('%d %b, %Y') }}</td>
+                                                <td>
+                                                    <div class="btn-list flex-nowrap">
+                                                        <a href="{{ url_for('faculty.view_profile', faculty_id=faculty.faculty_id) }}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="ti ti-eye"></i> View Profile
+                                                        </a>
+                                                        <a href="{{ url_for('faculty.unfreeze_profile', faculty_id=faculty.faculty_id) }}" class="btn btn-sm btn-warning">
+                                                            <i class="ti ti-lock-open"></i> Unfreeze
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="empty">
+                                <div class="empty-icon">
+                                    <i class="ti ti-lock"></i>
+                                </div>
+                                <p class="empty-title">No frozen profiles</p>
+                                <p class="empty-subtitle text-muted">
+                                    There are no frozen faculty profiles.
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Unfreeze All Modal -->
+<div class="modal modal-blur fade" id="modal-unfreeze-all" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Unfreeze Selected Profiles</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to unfreeze all selected faculty profiles?</p>
+                <p>This action will unfreeze <span id="selected-count">0</span> profiles, allowing faculty members to edit their profiles again.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="unfreeze-all-form" action="{{ url_for('admin.unfreeze_selected') }}" method="POST">
+                    <input type="hidden" name="faculty_ids" id="selected-faculty-ids">
+                    <button type="submit" class="btn btn-warning ms-auto">Unfreeze Selected</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectAll = document.getElementById('select-all');
+        const facultyCheckboxes = document.querySelectorAll('.faculty-checkbox');
+        const selectedCount = document.getElementById('selected-count');
+        const selectedFacultyIds = document.getElementById('selected-faculty-ids');
+        const unfreezeAllBtn = document.getElementById('unfreeze-all-btn');
+        
+        // Update selected count and unfreeze button state
+        function updateSelection() {
+            const selected = document.querySelectorAll('.faculty-checkbox:checked');
+            selectedCount.textContent = selected.length;
+            
+            // Collect selected faculty IDs
+            const ids = Array.from(selected).map(checkbox => checkbox.value);
+            selectedFacultyIds.value = ids.join(',');
+            
+            // Disable unfreeze all button if none selected
+            if (selected.length === 0) {
+                unfreezeAllBtn.classList.add('disabled');
+            } else {
+                unfreezeAllBtn.classList.remove('disabled');
+            }
+        }
+        
+        // Select/deselect all
+        selectAll.addEventListener('change', function() {
+            facultyCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateSelection();
+        });
+        
+        // Update stats when individual checkboxes change
+        facultyCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateSelection);
+        });
+        
+        // Initial update
+        updateSelection();
+    });
+</script>
+{% endblock %}

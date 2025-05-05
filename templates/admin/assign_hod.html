@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Assign HOD - Faculty Management System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Assign HOD</h2>
+                <div class="page-pretitle">Assign Head of Department</div>
+            </div>
+            <div class="col-auto ms-auto">
+                <div class="btn-list">
+                    <a href="{{ url_for('admin.manage_departments') }}" class="btn btn-outline-primary d-none d-sm-inline-block">
+                        <i class="ti ti-arrow-left"></i> Back to Departments
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-cards">
+            <div class="col-12">
+                <form action="{{ url_for('admin.assign_hod') }}" method="POST" class="card">
+                    {{ form.csrf_token }}
+                    <div class="card-header">
+                        <h3 class="card-title">Assign Head of Department (HOD)</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label required">Department</label>
+                            <select name="department_id" id="department_select" class="form-select" required>
+                                <option value="">Select Department</option>
+                                {% for department in departments %}
+                                    <option value="{{ department.department_id }}" {{ 'selected' if request.args.get('department_id')|int == department.department_id }}>
+                                        {{ department.department_name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label required">Select Faculty Member as HOD</label>
+                            <select name="faculty_id" id="faculty_select" class="form-select" required disabled>
+                                <option value="">Select Faculty Member</option>
+                                <!-- Options will be populated dynamically based on the selected department -->
+                            </select>
+                            <small class="form-hint">Select a faculty member to assign as HOD for the selected department</small>
+                        </div>
+                        
+                        <div id="current_hod_container" class="d-none">
+                            <div class="alert alert-info">
+                                <h4 class="alert-title">Current HOD Information</h4>
+                                <div id="current_hod_info"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <button type="submit" class="btn btn-primary">Assign HOD</button>
+                        <a href="{{ url_for('admin.manage_departments') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Current Department Heads</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-vcenter card-table">
+                                <thead>
+                                    <tr>
+                                        <th>Department</th>
+                                        <th>HOD</th>
+                                        <th>Email</th>
+                                        <th>Contact</th>
+                                        <th>Assigned Since</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- For each department, find and display the current HOD -->
+                                    {% for department in departments %}
+                                        {% set hod = None %}
+                                        {% set hod_user = None %}
+                                        {% for faculty in department.faculty_members %}
+                                            {% if faculty.user and faculty.user.is_hod %}
+                                                {% set hod = faculty %}
+                                                {% set hod_user = faculty.user %}
+                                                {% break %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        <tr>
+                                            <td>{{ department.department_name }}</td>
+                                            <td>
+                                                {% if hod %}
+                                                    <div class="d-flex py-1 align-items-center">
+                                                        <span class="avatar me-2 avatar-sm rounded" style="background-image: url({{ url_for('static', filename='uploads/' + hod.photo_attachment.file_path) if hod.photo_attachment_id else url_for('static', filename='images/default-avatar.png') }})"></span>
+                                                        <div>{{ hod.full_name }}</div>
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-muted">No HOD Assigned</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ hod.email if hod else 'N/A' }}</td>
+                                            <td>{{ hod.contact_no if hod and hod.contact_no else 'N/A' }}</td>
+                                            <td>
+                                                {% if hod_user %}
+                                                    {% for user_role in hod_user.roles %}
+                                                        {% if user_role.name == 'hod' %}
+                                                            {{ user_role.assigned_at.strftime('%d %b, %Y') if user_role.assigned_at else 'N/A' }}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if hod %}
+                                                    <a href="{{ url_for('admin.assign_hod') }}?department_id={{ department.department_id }}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="ti ti-refresh"></i> Change
+                                                    </a>
+                                                    <a href="#" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modal-remove-hod-{{ department.department_id }}">
+                                                        <i class="ti ti-user-off"></i> Remove
+                                                    </a>
+                                                    
+                                                    <!-- Remove HOD Modal -->
+                                                    <div class="modal modal-blur fade" id="modal-remove-hod-{{ department.department_id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                                        <div class="modal-dialog modal-dialog-centered" role="document">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title">Remove HOD</h5>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <p>Are you sure you want to remove <strong>{{ hod.full_name }}</strong> as HOD of <strong>{{ department.department_name }}</strong> department?</p>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                    <form action="#" method="POST">
+                                                                        <input type="hidden" name="remove_hod" value="1">
+                                                                        <input type="hidden" name="user_id" value="{{ hod_user.user_id }}">
+                                                                        <button type="submit" class="btn btn-danger">Remove HOD</button>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                {% else %}
+                                                    <a href="{{ url_for('admin.assign_hod') }}?department_id={{ department.department_id }}" class="btn btn-sm btn-primary">
+                                                        <i class="ti ti-user-plus"></i> Assign
+                                                    </a>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const departmentSelect = document.getElementById('department_select');
+        const facultySelect = document.getElementById('faculty_select');
+        const currentHodContainer = document.getElementById('current_hod_container');
+        const currentHodInfo = document.getElementById('current_hod_info');
+        
+        // Faculty data by department (this would be populated from the server in a real implementation)
+        const facultyByDepartment = {
+            {% for department in departments %}
+                {{ department.department_id }}: [
+                    {% for faculty in department.faculty_members %}
+                        {
+                            id: {{ faculty.faculty_id }},
+                            name: "{{ faculty.full_name }}",
+                            isHod: {{ 'true' if faculty.user and faculty.user.is_hod else 'false' }},
+                            email: "{{ faculty.email }}",
+                            photo: "{{ url_for('static', filename='uploads/' + faculty.photo_attachment.file_path) if faculty.photo_attachment_id else url_for('static', filename='images/default-avatar.png') }}"
+                        },
+                    {% endfor %}
+                ],
+            {% endfor %}
+        };
+        
+        // Handle department selection change
+        departmentSelect.addEventListener('change', function() {
+            const departmentId = this.value;
+            
+            // Clear faculty select
+            facultySelect.innerHTML = '<option value="">Select Faculty Member</option>';
+            
+            // Hide current HOD container
+            currentHodContainer.classList.add('d-none');
+            
+            if (departmentId) {
+                // Enable faculty select
+                facultySelect.disabled = false;
+                
+                // Get faculty for selected department
+                const faculty = facultyByDepartment[departmentId] || [];
+                
+                // Display current HOD if exists
+                const currentHod = faculty.find(f => f.isHod);
+                if (currentHod) {
+                    currentHodInfo.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <span class="avatar me-2 avatar-md rounded" style="background-image: url('${currentHod.photo}')"></span>
+                            <div>
+                                <div class="font-weight-medium">${currentHod.name}</div>
+                                <div class="text-muted">${currentHod.email}</div>
+                            </div>
+                        </div>
+                        <p class="mt-3 mb-0">Selecting a new HOD will replace the current one.</p>
+                    `;
+                    currentHodContainer.classList.remove('d-none');
+                }
+                
+                // Populate faculty options
+                faculty.forEach(f => {
+                    const option = document.createElement('option');
+                    option.value = f.id;
+                    option.textContent = f.name;
+                    if (f.isHod) {
+                        option.textContent += ' (Current HOD)';
+                    }
+                    facultySelect.appendChild(option);
+                });
+            } else {
+                // Disable faculty select
+                facultySelect.disabled = true;
+            }
+        });
+        
+        // Trigger change event if department is already selected (for page reload)
+        if (departmentSelect.value) {
+            departmentSelect.dispatchEvent(new Event('change'));
+        }
+    });
+</script>
+{% endblock %}

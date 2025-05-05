@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Add Work Experience - Faculty Management System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Add Work Experience</h2>
+                <div class="page-pretitle">Add your professional experience details</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-cards">
+            <div class="col-12">
+                <form action="{{ url_for('faculty.add_work_experience', faculty_id=faculty.faculty_id) }}" method="POST" enctype="multipart/form-data" class="card">
+                    {{ form.csrf_token }}
+                    <div class="card-header">
+                        <h3 class="card-title">Work Experience Details</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">Institution Name</label>
+                                <input type="text" name="institution_name" class="form-control" placeholder="Name of the institution" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label required">Experience Type</label>
+                                <select name="experience_type" class="form-select" required>
+                                    <option value="">Select Experience Type</option>
+                                    {% for type in experience_types %}
+                                        <option value="{{ type }}">{{ type }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Designation</label>
+                                <input type="text" name="designation" class="form-control" placeholder="Your designation">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">From Date</label>
+                                <input type="date" name="from_date" class="form-control">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">To Date</label>
+                                <input type="date" name="to_date" class="form-control">
+                                <small class="form-hint">Leave blank if currently working here</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Responsibilities</label>
+                            <textarea name="responsibilities" class="form-control" rows="3" placeholder="Describe your responsibilities"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Service Certificate</label>
+                            <input type="file" name="service_certificate" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                        </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <button type="submit" class="btn btn-primary">Add Experience</button>
+                        <a href="{{ url_for('faculty.manage_work_experience', faculty_id=faculty.faculty_id) }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

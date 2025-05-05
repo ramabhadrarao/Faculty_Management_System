@@ -1,0 +1,669 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Profile - {{ faculty.full_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Faculty Profile</h2>
+                <div class="page-pretitle">{{ faculty.full_name }}</div>
+            </div>
+            <div class="col-auto ms-auto">
+                <div class="btn-list">
+                    {% if faculty.profile_status == 'pending' %}
+                        <span class="badge bg-yellow">Pending Approval</span>
+                    {% elif faculty.profile_status == 'approved' %}
+                        <span class="badge bg-green">Approved</span>
+                    {% elif faculty.profile_status == 'frozen' %}
+                        <span class="badge bg-azure">Frozen</span>
+                    {% elif faculty.profile_status == 'unfrozen' %}
+                        <span class="badge bg-blue">Unfrozen</span>
+                    {% endif %}
+                    
+                    {% if faculty.user_id == current_user.user_id %}
+                        {% if faculty.can_edit() %}
+                            <a href="{{ url_for('faculty.edit_profile', faculty_id=faculty.faculty_id) }}" class="btn btn-primary">
+                                <i class="ti ti-pencil icon"></i> Edit Profile
+                            </a>
+                            <a href="{{ url_for('faculty.freeze_profile', faculty_id=faculty.faculty_id) }}" class="btn btn-primary">
+                                <i class="ti ti-lock icon"></i> Freeze Profile
+                            </a>
+                        {% else %}
+                            <button class="btn btn-secondary" disabled>
+                                <i class="ti ti-lock icon"></i> Profile Frozen
+                            </button>
+                        {% endif %}
+                    {% endif %}
+                    
+                    {% if current_user.is_admin or current_user.is_principal or (current_user.is_hod and faculty.department_id == current_user.faculty_profile.department_id) %}
+                        {% if faculty.profile_status == 'pending' %}
+                            <a href="{{ url_for('faculty.approve_profile', faculty_id=faculty.faculty_id) }}" class="btn btn-success">
+                                <i class="ti ti-check icon"></i> Approve Profile
+                            </a>
+                        {% endif %}
+                        
+                        {% if faculty.profile_status == 'frozen' %}
+                            <a href="{{ url_for('faculty.unfreeze_profile', faculty_id=faculty.faculty_id) }}" class="btn btn-warning">
+                                <i class="ti ti-lock-open icon"></i> Unfreeze Profile
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-deck row-cards">
+            <!-- Profile Information Card -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-body p-4 text-center">
+                        <span class="avatar avatar-xl mb-3 avatar-rounded" 
+                              style="background-image: url({{ url_for('static', filename='uploads/' + faculty.photo_attachment.file_path) if faculty.photo_attachment_id else url_for('static', filename='images/default-avatar.png') }})">
+                        </span>
+                        <h3 class="m-0 mb-1">{{ faculty.full_name }}</h3>
+                        <div class="text-muted">{{ faculty.additional_details.position if faculty.additional_details and faculty.additional_details.position else 'Faculty Member' }}</div>
+                        <div class="mt-3">
+                            <span class="badge bg-purple-lt">{{ faculty.department.department_name if faculty.department else 'No Department' }}</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <i class="ti ti-mail me-2 text-muted"></i>
+                            <span>{{ faculty.email }}</span>
+                        </div>
+                        {% if faculty.contact_no %}
+                        <div class="mb-2">
+                            <i class="ti ti-phone me-2 text-muted"></i>
+                            <span>{{ faculty.contact_no }}</span>
+                        </div>
+                        {% endif %}
+                        {% if faculty.dob %}
+                        <div class="mb-2">
+                            <i class="ti ti-calendar me-2 text-muted"></i>
+                            <span>{{ faculty.dob.strftime('%d %b, %Y') }}</span>
+                        </div>
+                        {% endif %}
+                        <div class="mb-2">
+                            <i class="ti ti-briefcase me-2 text-muted"></i>
+                            <span>Joined on {{ faculty.join_date.strftime('%d %b, %Y') }}</span>
+                        </div>
+                        {% if faculty.address %}
+                        <div class="mb-2">
+                            <i class="ti ti-map-pin me-2 text-muted"></i>
+                            <span>{{ faculty.address }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if additional_details %}
+                    <div class="card-footer">
+                        <div class="list-group list-group-flush">
+                            {% if additional_details.blood_group %}
+                            <div class="list-group-item">
+                                <div class="row align-items-center">
+                                    <div class="col-auto"><span class="badge bg-red">{{ additional_details.blood_group }}</span></div>
+                                    <div class="col text-truncate">Blood Group</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if additional_details.nationality %}
+                            <div class="list-group-item">
+                                <div class="row align-items-center">
+                                    <div class="col-auto"><i class="ti ti-world text-muted"></i></div>
+                                    <div class="col text-truncate">{{ additional_details.nationality }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if additional_details.google_scholar_id_link %}
+                            <div class="list-group-item">
+                                <div class="row align-items-center">
+                                    <div class="col-auto"><i class="ti ti-brand-google text-muted"></i></div>
+                                    <div class="col text-truncate">
+                                        <a href="{{ additional_details.google_scholar_id_link }}" target="_blank">Google Scholar</a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            
+                            {% if additional_details.orcid_id %}
+                            <div class="list-group-item">
+                                <div class="row align-items-center">
+                                    <div class="col-auto"><i class="ti ti-id text-muted"></i></div>
+                                    <div class="col text-truncate">
+                                        <a href="https://orcid.org/{{ additional_details.orcid_id }}" target="_blank">ORCID: {{ additional_details.orcid_id }}</a>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Profile Details -->
+            <div class="col-md-8">
+                <!-- Tabs Navigation -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex">
+                            <ul class="nav nav-tabs nav-fill" data-bs-toggle="tabs">
+                                <li class="nav-item">
+                                    <a href="#personal" class="nav-link active" data-bs-toggle="tab">
+                                        <i class="ti ti-user me-2"></i>Personal
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="#experience" class="nav-link" data-bs-toggle="tab">
+                                        <i class="ti ti-briefcase me-2"></i>Experience
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="#publications" class="nav-link" data-bs-toggle="tab">
+                                        <i class="ti ti-file-text me-2"></i>Publications
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="#activities" class="nav-link" data-bs-toggle="tab">
+                                        <i class="ti ti-activity me-2"></i>Activities
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="tab-content">
+                            <!-- Personal Information Tab -->
+                            <div class="tab-pane active" id="personal">
+                                <h4 class="my-3">Personal Information</h4>
+                                {% if additional_details %}
+                                    <div class="row">
+                                        {% if additional_details.father_name %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">Father's Name</label>
+                                            <div>{{ additional_details.father_name }}</div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if additional_details.mother_name %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">Mother's Name</label>
+                                            <div>{{ additional_details.mother_name }}</div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if additional_details.father_occupation %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">Father's Occupation</label>
+                                            <div>{{ additional_details.father_occupation }}</div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if additional_details.mother_occupation %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">Mother's Occupation</label>
+                                            <div>{{ additional_details.mother_occupation }}</div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if additional_details.marital_status %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">Marital Status</label>
+                                            <div>{{ additional_details.marital_status }}</div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if additional_details.spouse_name %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">Spouse Name</label>
+                                            <div>{{ additional_details.spouse_name }}</div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if additional_details.spouse_occupation %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">Spouse Occupation</label>
+                                            <div>{{ additional_details.spouse_occupation }}</div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if additional_details.religion %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">Religion</label>
+                                            <div>{{ additional_details.religion }}</div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if additional_details.category %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">Category</label>
+                                            <div>{{ additional_details.category }}</div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if additional_details.caste %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">Caste</label>
+                                            <div>{{ additional_details.caste }}</div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if additional_details.sub_caste %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">Sub-caste</label>
+                                            <div>{{ additional_details.sub_caste }}</div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <h4 class="my-3">Contact Information</h4>
+                                    <div class="row">
+                                        {% if additional_details.contact_no2 %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">Alternative Contact</label>
+                                            <div>{{ additional_details.contact_no2 }}</div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if additional_details.permanent_address %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">Permanent Address</label>
+                                            <div>{{ additional_details.permanent_address }}</div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if additional_details.correspondence_address %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">Correspondence Address</label>
+                                            <div>{{ additional_details.correspondence_address }}</div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <h4 class="my-3">Identification</h4>
+                                    <div class="row">
+                                        {% if additional_details.aadhar_no %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">Aadhar Number</label>
+                                            <div>{{ additional_details.aadhar_no }}</div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if additional_details.pan_no %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">PAN Number</label>
+                                            <div>{{ additional_details.pan_no }}</div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <h4 class="my-3">Professional IDs</h4>
+                                    <div class="row">
+                                        {% if additional_details.scopus_author_id %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">Scopus Author ID</label>
+                                            <div>{{ additional_details.scopus_author_id }}</div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if additional_details.aicte_id %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">AICTE ID</label>
+                                            <div>{{ additional_details.aicte_id }}</div>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        {% if additional_details.scet_id %}
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label text-muted">SCET ID</label>
+                                            <div>{{ additional_details.scet_id }}</div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <div class="empty">
+                                        <div class="empty-icon">
+                                            <i class="ti ti-user-off"></i>
+                                        </div>
+                                        <p class="empty-title">No additional details found</p>
+                                        <p class="empty-subtitle text-muted">
+                                            Additional details have not been added yet.
+                                        </p>
+                                        {% if faculty.user_id == current_user.user_id and faculty.can_edit() %}
+                                        <div class="empty-action">
+                                            <a href="{{ url_for('faculty.edit_additional_details', faculty_id=faculty.faculty_id) }}" class="btn btn-primary">
+                                                <i class="ti ti-plus"></i>
+                                                Add Additional Details
+                                            </a>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Work Experience Tab -->
+                            <div class="tab-pane" id="experience">
+                                <h4 class="my-3">Work Experience</h4>
+                                {% if work_experiences %}
+                                    <div class="timeline">
+                                        {% for experience in work_experiences %}
+                                            <div class="timeline-event">
+                                                <div class="timeline-event-icon bg-{{ 'azure' if experience.experience_type == 'Teaching' else 'green' }}">
+                                                    <i class="ti ti-{{ 'school' if experience.experience_type == 'Teaching' else 'building' }}"></i>
+                                                </div>
+                                                <div class="card timeline-event-card">
+                                                    <div class="card-body">
+                                                        <div class="text-muted float-end">
+                                                            {{ experience.from_date.strftime('%b %Y') if experience.from_date else '' }} - 
+                                                            {{ experience.to_date.strftime('%b %Y') if experience.to_date else 'Present' }}
+                                                            {% if experience.number_of_years %}
+                                                                ({{ experience.number_of_years }} years)
+                                                            {% endif %}
+                                                        </div>
+                                                        <h4>{{ experience.designation }}</h4>
+                                                        <div class="text-muted">{{ experience.institution_name }}</div>
+                                                        {% if experience.responsibilities %}
+                                                            <div class="text-muted mt-2">
+                                                                {{ experience.responsibilities }}
+                                                            </div>
+                                                        {% endif %}
+                                                        {% if experience.service_certificate_attachment_id %}
+                                                            <div class="mt-2">
+                                                                <a href="{{ url_for('static', filename='uploads/' + experience.service_certificate.file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                                    <i class="ti ti-file-certificate"></i> View Certificate
+                                                                </a>
+                                                            </div>
+                                                        {% endif %}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="empty">
+                                        <div class="empty-icon">
+                                            <i class="ti ti-briefcase-off"></i>
+                                        </div>
+                                        <p class="empty-title">No work experience found</p>
+                                        <p class="empty-subtitle text-muted">
+                                            Work experience details have not been added yet.
+                                        </p>
+                                        {% if faculty.user_id == current_user.user_id and faculty.can_edit() %}
+                                        <div class="empty-action">
+                                            <a href="{{ url_for('faculty.add_work_experience', faculty_id=faculty.faculty_id) }}" class="btn btn-primary">
+                                                <i class="ti ti-plus"></i>
+                                                Add Work Experience
+                                            </a>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Publications Tab -->
+                            <div class="tab-pane" id="publications">
+                                <h4 class="my-3">Research Publications</h4>
+                                {% if research_publications %}
+                                    <div class="table-responsive">
+                                        <table class="table table-vcenter card-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Title</th>
+                                                    <th>Journal/Conference</th>
+                                                    <th>Type</th>
+                                                    <th>Date</th>
+                                                    <th></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for publication in research_publications %}
+                                                    <tr>
+                                                        <td>{{ publication.title }}</td>
+                                                        <td>{{ publication.journal_name }}</td>
+                                                        <td>{{ publication.type.lookup_value if publication.type else 'N/A' }}</td>
+                                                        <td>{{ publication.publication_date.strftime('%d %b, %Y') if publication.publication_date else 'N/A' }}</td>
+                                                        <td class="text-end">
+                                                            {% if publication.doi %}
+                                                                <a href="https://doi.org/{{ publication.doi }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                                    <i class="ti ti-external-link"></i> DOI
+                                                                </a>
+                                                            {% endif %}
+                                                            
+                                                            {% if publication.attachment_id %}
+                                                                <a href="{{ url_for('static', filename='uploads/' + publication.attachment.file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                                    <i class="ti ti-file"></i> View
+                                                                </a>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% else %}
+                                    <div class="empty">
+                                        <div class="empty-icon">
+                                            <i class="ti ti-file-off"></i>
+                                        </div>
+                                        <p class="empty-title">No publications found</p>
+                                        <p class="empty-subtitle text-muted">
+                                            Research publications have not been added yet.
+                                        </p>
+                                        {% if faculty.user_id == current_user.user_id and faculty.can_edit() %}
+                                        <div class="empty-action">
+                                            <a href="#" class="btn btn-primary">
+                                                <i class="ti ti-plus"></i>
+                                                Add Publication
+                                            </a>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Activities Tab -->
+                            <div class="tab-pane" id="activities">
+                                <div class="d-flex">
+                                    <ul class="nav nav-pills mb-3">
+                                        <li class="nav-item">
+                                            <a href="#workshops" class="nav-link active" data-bs-toggle="tab">Workshops</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="#fdp" class="nav-link" data-bs-toggle="tab">FDP/MDP</a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="#awards" class="nav-link" data-bs-toggle="tab">Honours & Awards</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="tab-content">
+                                    <!-- Workshops Tab -->
+                                    <div class="tab-pane active" id="workshops">
+                                        <h4 class="my-3">Workshops & Seminars</h4>
+                                        {% if workshops_seminars %}
+                                            <div class="table-responsive">
+                                                <table class="table table-vcenter card-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Title</th>
+                                                            <th>Type</th>
+                                                            <th>Organized By</th>
+                                                            <th>Date</th>
+                                                            <th></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for workshop in workshops_seminars %}
+                                                            <tr>
+                                                                <td>{{ workshop.title }}</td>
+                                                                <td>{{ workshop.type.lookup_value if workshop.type else 'N/A' }}</td>
+                                                                <td>{{ workshop.organized_by }}</td>
+                                                                <td>{{ workshop.date.strftime('%d %b, %Y') if workshop.date else 'N/A' }}</td>
+                                                                <td class="text-end">
+                                                                    {% if workshop.attachment_id %}
+                                                                        <a href="{{ url_for('static', filename='uploads/' + workshop.attachment.file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                                            <i class="ti ti-file"></i> View Certificate
+                                                                        </a>
+                                                                    {% endif %}
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% else %}
+                                            <div class="empty">
+                                                <div class="empty-icon">
+                                                    <i class="ti ti-presentation-off"></i>
+                                                </div>
+                                                <p class="empty-title">No workshops or seminars found</p>
+                                                <p class="empty-subtitle text-muted">
+                                                    Workshop and seminar details have not been added yet.
+                                                </p>
+                                                {% if faculty.user_id == current_user.user_id and faculty.can_edit() %}
+                                                <div class="empty-action">
+                                                    <a href="#" class="btn btn-primary">
+                                                        <i class="ti ti-plus"></i>
+                                                        Add Workshop/Seminar
+                                                    </a>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- FDP/MDP Tab -->
+                                    <div class="tab-pane" id="fdp">
+                                        <h4 class="my-3">Faculty/Management Development Programs</h4>
+                                        {% if mdp_fdp %}
+                                            <div class="table-responsive">
+                                                <table class="table table-vcenter card-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Title</th>
+                                                            <th>Type</th>
+                                                            <th>Organized By</th>
+                                                            <th>Duration</th>
+                                                            <th></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for program in mdp_fdp %}
+                                                            <tr>
+                                                                <td>{{ program.title }}</td>
+                                                                <td>{{ program.type.lookup_value if program.type else 'N/A' }}</td>
+                                                                <td>{{ program.organized_by }}</td>
+                                                                <td>
+                                                                    {% if program.start_date and program.end_date %}
+                                                                        {{ program.start_date.strftime('%d %b, %Y') }} to {{ program.end_date.strftime('%d %b, %Y') }}
+                                                                    {% elif program.start_date %}
+                                                                        From {{ program.start_date.strftime('%d %b, %Y') }}
+                                                                    {% else %}
+                                                                        N/A
+                                                                    {% endif %}
+                                                                </td>
+                                                                <td class="text-end">
+                                                                    {% if program.attachment_id %}
+                                                                        <a href="{{ url_for('static', filename='uploads/' + program.attachment.file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                                            <i class="ti ti-file"></i> View Certificate
+                                                                        </a>
+                                                                    {% endif %}
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% else %}
+                                            <div class="empty">
+                                                <div class="empty-icon">
+                                                    <i class="ti ti-certificate-off"></i>
+                                                </div>
+                                                <p class="empty-title">No FDP/MDP records found</p>
+                                                <p class="empty-subtitle text-muted">
+                                                    Faculty/Management Development Program details have not been added yet.
+                                                </p>
+                                                {% if faculty.user_id == current_user.user_id and faculty.can_edit() %}
+                                                <div class="empty-action">
+                                                    <a href="#" class="btn btn-primary">
+                                                        <i class="ti ti-plus"></i>
+                                                        Add FDP/MDP
+                                                    </a>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <!-- Honours & Awards Tab -->
+                                    <div class="tab-pane" id="awards">
+                                        <h4 class="my-3">Honours & Awards</h4>
+                                        {% if honours_awards %}
+                                            <div class="table-responsive">
+                                                <table class="table table-vcenter card-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Award Title</th>
+                                                            <th>Awarded By</th>
+                                                            <th>Category</th>
+                                                            <th>Date</th>
+                                                            <th></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for award in honours_awards %}
+                                                            <tr>
+                                                                <td>{{ award.award_title }}</td>
+                                                                <td>{{ award.awarded_by }}</td>
+                                                                <td>{{ award.category.lookup_value if award.category else 'N/A' }}</td>
+                                                                <td>{{ award.date.strftime('%d %b, %Y') if award.date else 'N/A' }}</td>
+                                                                <td class="text-end">
+                                                                    {% if award.attachment_id %}
+                                                                        <a href="{{ url_for('static', filename='uploads/' + award.attachment.file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                                            <i class="ti ti-file"></i> View Certificate
+                                                                        </a>
+                                                                    {% endif %}
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% else %}
+                                            <div class="empty">
+                                                <div class="empty-icon">
+                                                    <i class="ti ti-award-off"></i>
+                                                </div>
+                                                <p class="empty-title">No honours or awards found</p>
+                                                <p class="empty-subtitle text-muted">
+                                                    Honours and awards have not been added yet.
+                                                </p>
+                                                {% if faculty.user_id == current_user.user_id and faculty.can_edit() %}
+                                                <div class="empty-action">
+                                                    <a href="#" class="btn btn-primary">
+                                                        <i class="ti ti-plus"></i>
+                                                        Add Honour/Award
+                                                    </a>
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

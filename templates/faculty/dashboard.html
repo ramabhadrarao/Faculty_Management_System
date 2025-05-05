@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}Faculty Dashboard - Faculty Management System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Faculty Dashboard</h2>
+                <div class="page-pretitle">Overview and statistics</div>
+            </div>
+            <div class="col-auto ms-auto">
+                <div class="btn-list">
+                    {% if faculty.profile_status == 'pending' %}
+                        <span class="badge bg-yellow">Pending Approval</span>
+                    {% elif faculty.profile_status == 'approved' %}
+                        <span class="badge bg-green">Approved</span>
+                    {% elif faculty.profile_status == 'frozen' %}
+                        <span class="badge bg-azure">Frozen</span>
+                    {% elif faculty.profile_status == 'unfrozen' %}
+                        <span class="badge bg-blue">Unfrozen</span>
+                    {% endif %}
+                    
+                    {% if faculty.can_edit() %}
+                        <a href="{{ url_for('faculty.freeze_profile', faculty_id=faculty.faculty_id) }}" class="btn btn-primary">
+                            <i class="ti ti-lock icon"></i> Freeze Profile
+                        </a>
+                    {% else %}
+                        <button class="btn btn-secondary" disabled>
+                            <i class="ti ti-lock icon"></i> Profile Frozen
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-deck row-cards">
+            <!-- Profile Information Card -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body p-4 text-center">
+                        <span class="avatar avatar-xl mb-3 avatar-rounded" 
+                              style="background-image: url({{ url_for('static', filename='uploads/' + faculty.photo_attachment.file_path) if faculty.photo_attachment_id else url_for('static', filename='images/default-avatar.png') }})">
+                        </span>
+                        <h3 class="m-0 mb-1">{{ faculty.full_name }}</h3>
+                        <div class="text-muted">{{ faculty.additional_details.position if faculty.additional_details and faculty.additional_details.position else 'Faculty Member' }}</div>
+                        <div class="mt-3">
+                            <span class="badge bg-purple-lt">{{ faculty.department.department_name if faculty.department else 'No Department' }}</span>
+                        </div>
+                    </div>
+                    <div class="d-flex">
+                        <a href="{{ url_for('faculty.view_profile', faculty_id=faculty.faculty_id) }}" class="card-btn">
+                            <i class="ti ti-user me-2"></i>View Profile
+                        </a>
+                        <a href="{{ url_for('faculty.edit_profile', faculty_id=faculty.faculty_id) }}" class="card-btn">
+                            <i class="ti ti-pencil me-2"></i>Edit Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="col-md-6">
+                <div class="row row-cards">
+                    <div class="col-6">
+                        <div class="card">
+                            <div class="card-body p-2 text-center">
+                                <div class="h1 m-0">{{ stats.publications }}</div>
+                                <div class="text-muted">Publications</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card">
+                            <div class="card-body p-2 text-center">
+                                <div class="h1 m-0">{{ stats.teaching }}</div>
+                                <div class="text-muted">Teaching Activities</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card">
+                            <div class="card-body p-2 text-center">
+                                <div class="h1 m-0">{{ stats.workshops }}</div>
+                                <div class="text-muted">Workshops</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card">
+                            <div class="card-body p-2 text-center">
+                                <div class="h1 m-0">{{ stats.awards }}</div>
+                                <div class="text-muted">Awards</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activities -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Recent Activities</h3>
+                    </div>
+                    <div class="card-body">
+                        {% if recent_activities %}
+                            <div class="table-responsive">
+                                <table class="table table-vcenter card-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Activity Title</th>
+                                            <th>Type</th>
+                                            <th>Date</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for activity in recent_activities %}
+                                            <tr>
+                                                <td>{{ activity.activity_title }}</td>
+                                                <td>{{ activity.type }}</td>
+                                                <td>{{ activity.date.strftime('%d %b, %Y') if activity.date else 'N/A' }}</td>
+                                                <td class="text-end">
+                                                    <a href="#" class="btn btn-sm btn-outline-primary">View Details</a>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="empty">
+                                <div class="empty-icon">
+                                    <i class="ti ti-activity"></i>
+                                </div>
+                                <p class="empty-title">No activities found</p>
+                                <p class="empty-subtitle text-muted">
+                                    You haven't added any activities yet. Start adding your professional activities to track them here.
+                                </p>
+                                <div class="empty-action">
+                                    <a href="#" class="btn btn-primary">
+                                        <i class="ti ti-plus"></i>
+                                        Add an activity
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Completion Card -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Profile Completion</h3>
+                    </div>
+                    <div class="card-body">
+                        <!-- Calculate completion percentage -->
+                        {% set total_sections = 7 %}
+                        {% set completed_sections = 1 %}  <!-- Basic info is always complete -->
+                        {% if faculty.additional_details %}{% set completed_sections = completed_sections + 1 %}{% endif %}
+                        {% if stats.teaching > 0 %}{% set completed_sections = completed_sections + 1 %}{% endif %}
+                        {% if stats.publications > 0 %}{% set completed_sections = completed_sections + 1 %}{% endif %}
+                        {% if stats.workshops > 0 %}{% set completed_sections = completed_sections + 1 %}{% endif %}
+                        {% if stats.awards > 0 %}{% set completed_sections = completed_sections + 1 %}{% endif %}
+                        {% if stats.projects > 0 %}{% set completed_sections = completed_sections + 1 %}{% endif %}
+                        
+                        {% set completion_percent = (completed_sections / total_sections * 100) | int %}
+                        
+                        <div class="d-flex mb-2">
+                            <div>Profile Completion</div>
+                            <div class="ms-auto">
+                                <span class="text-muted">{{ completion_percent }}%</span>
+                            </div>
+                        </div>
+                        <div class="progress progress-sm">
+                            <div class="progress-bar bg-primary" style="width: {{ completion_percent }}%" role="progressbar" aria-valuenow="{{ completion_percent }}" aria-valuemin="0" aria-valuemax="100" aria-label="{{ completion_percent }}% Complete">
+                                <span class="visually-hidden">{{ completion_percent }}% Complete</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <div class="card card-sm">
+                                        <div class="card-body">
+                                            <div class="row align-items-center">
+                                                <div class="col-auto">
+                                                    {% if faculty.additional_details %}
+                                                        <span class="badge bg-green">
+                                                            <i class="ti ti-check"></i>
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-muted">
+                                                            <i class="ti ti-x"></i>
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col">
+                                                    <div class="text-truncate">
+                                                        Additional Details
+                                                    </div>
+                                                    <div class="text-muted">
+                                                        {{ 'Completed' if faculty.additional_details else 'Incomplete' }}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="card card-sm">
+                                        <div class="card-body">
+                                            <div class="row align-items-center">
+                                                <div class="col-auto">
+                                                    {% if stats.teaching > 0 %}
+                                                        <span class="badge bg-green">
+                                                            <i class="ti ti-check"></i>
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-muted">
+                                                            <i class="ti ti-x"></i>
+                                                        </span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="col">
+                                                    <div class="text-truncate">
+                                                        Teaching Activities
+                                                    </div>
+                                                    <div class="text-muted">
+                                                        {{ stats.teaching }} activities added
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Add more completion cards for other sections -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

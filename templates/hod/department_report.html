@@ -1,0 +1,407 @@
+{% extends "base.html" %}
+
+{% block title %}Department Report - Faculty Management System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Department Report</h2>
+                <div class="page-pretitle">{{ report.department.department_name }} Department</div>
+            </div>
+            <div class="col-auto ms-auto">
+                <div class="btn-list">
+                    <button type="button" class="btn btn-primary d-none d-sm-inline-block" onclick="window.print();">
+                        <i class="ti ti-printer"></i> Print Report
+                    </button>
+                    <a href="#" class="btn btn-outline-primary" onclick="exportTableToCSV('department_report.csv')">
+                        <i class="ti ti-file-export"></i> Export to CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-deck row-cards">
+            <!-- Department Overview Card -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Department Overview</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="row align-items-center">
+                                    <div class="col-auto">
+                                        <span class="avatar avatar-xl rounded" style="background-image: url({{ url_for('static', filename='uploads/' + report.department.logo) if report.department.logo else url_for('static', filename='images/department-logo.png') }})"></span>
+                                    </div>
+                                    <div class="col">
+                                        <h3 class="mb-1">{{ report.department.department_name }}</h3>
+                                        <div class="text-muted">Department Code: {{ report.department.department_code }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="card card-sm">
+                                            <div class="card-body">
+                                                <div class="row align-items-center">
+                                                    <div class="col-auto">
+                                                        <span class="bg-blue text-white avatar">
+                                                            <i class="ti ti-users"></i>
+                                                        </span>
+                                                    </div>
+                                                    <div class="col">
+                                                        <div class="font-weight-medium">
+                                                            {{ report.faculty_count }} Faculty Members
+                                                        </div>
+                                                        <div class="text-muted">
+                                                            In the department
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card card-sm">
+                                            <div class="card-body">
+                                                <div class="row align-items-center">
+                                                    <div class="col-auto">
+                                                        <span class="bg-red text-white avatar">
+                                                            <i class="ti ti-file-text"></i>
+                                                        </span>
+                                                    </div>
+                                                    <div class="col">
+                                                        <div class="font-weight-medium">
+                                                            {{ report.total_publications }} Publications
+                                                        </div>
+                                                        <div class="text-muted">
+                                                            Research papers
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Faculty Statistics Card -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Research Output</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Total Publications</label>
+                                    <div class="h2">{{ report.total_publications }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Avg. Publications per Faculty</label>
+                                    <div class="h4">{{ "%.2f"|format(report.avg_publications) }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Publication Chart</label>
+                                    <div id="publication-chart" style="height: 150px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Professional Development</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Workshops & Seminars</label>
+                                    <div class="h2">{{ report.total_workshops }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Avg. Workshops per Faculty</label>
+                                    <div class="h4">{{ "%.2f"|format(report.avg_workshops) }}</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Honours & Awards</label>
+                                    <div class="h2">{{ report.total_awards }}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Avg. Awards per Faculty</label>
+                                    <div class="h4">{{ "%.2f"|format(report.avg_awards) }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Faculty Table Card -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Faculty Members Performance</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-vcenter card-table" id="faculty-table">
+                                <thead>
+                                    <tr>
+                                        <th>Faculty Name</th>
+                                        <th>Designation</th>
+                                        <th>Join Date</th>
+                                        <th>Publications</th>
+                                        <th>Workshops</th>
+                                        <th>Awards</th>
+                                        <th>Projects</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for faculty in faculty_members %}
+                                        <tr>
+                                            <td>{{ faculty.full_name }}</td>
+                                            <td>{{ faculty.additional_details.position if faculty.additional_details and faculty.additional_details.position else 'Faculty Member' }}</td>
+                                            <td>{{ faculty.join_date.strftime('%d %b, %Y') }}</td>
+                                            
+                                            {# Get the counts dynamically from faculty's related entities #}
+                                            {% set publication_count = faculty.research_publications|length %}
+                                            {% set workshop_count = faculty.workshops_seminars|length %}
+                                            {% set award_count = faculty.honours_awards|length %}
+                                            {% set project_count = faculty.research_consultancy|length %}
+                                            
+                                            <td>{{ publication_count }}</td>
+                                            <td>{{ workshop_count }}</td>
+                                            <td>{{ award_count }}</td>
+                                            <td>{{ project_count }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance Metrics Card -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Performance Metrics Summary</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h4>Research Performance</h4>
+                                <div id="research-chart" style="height: 250px;"></div>
+                            </div>
+                            <div class="col-md-6">
+                                <h4>Key Achievements</h4>
+                                <ul class="list-unstyled">
+                                    <li class="mb-3">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <span class="avatar bg-blue-lt">
+                                                <i class="ti ti-file-text"></i>
+                                            </span>
+                                            <span class="ms-2">Total Research Publications: {{ report.total_publications }}</span>
+                                        </div>
+                                        <div class="progress">
+                                            <div class="progress-bar bg-blue" style="width: 100%" role="progressbar" aria-valuenow="{{ report.total_publications }}" aria-valuemin="0" aria-valuemax="{{ report.total_publications }}">
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li class="mb-3">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <span class="avatar bg-green-lt">
+                                                <i class="ti ti-presentation"></i>
+                                            </span>
+                                            <span class="ms-2">Total Workshops & Seminars: {{ report.total_workshops }}</span>
+                                        </div>
+                                        <div class="progress">
+                                            <div class="progress-bar bg-green" style="width: {{ (report.total_workshops / report.total_publications * 100) if report.total_publications > 0 else 100 }}%" role="progressbar" aria-valuenow="{{ report.total_workshops }}" aria-valuemin="0" aria-valuemax="{{ report.total_publications }}">
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li class="mb-3">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <span class="avatar bg-purple-lt">
+                                                <i class="ti ti-award"></i>
+                                            </span>
+                                            <span class="ms-2">Total Honours & Awards: {{ report.total_awards }}</span>
+                                        </div>
+                                        <div class="progress">
+                                            <div class="progress-bar bg-purple" style="width: {{ (report.total_awards / report.total_publications * 100) if report.total_publications > 0 else 100 }}%" role="progressbar" aria-valuenow="{{ report.total_awards }}" aria-valuemin="0" aria-valuemax="{{ report.total_publications }}">
+                                            </div>
+                                        </div>
+                                    </li>
+                                    <li class="mb-3">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <span class="avatar bg-orange-lt">
+                                                <i class="ti ti-building"></i>
+                                            </span>
+                                            <span class="ms-2">Total Research Projects: {{ report.total_projects }}</span>
+                                        </div>
+                                        <div class="progress">
+                                            <div class="progress-bar bg-orange" style="width: {{ (report.total_projects / report.total_publications * 100) if report.total_publications > 0 else 100 }}%" role="progressbar" aria-valuenow="{{ report.total_projects }}" aria-valuemin="0" aria-valuemax="{{ report.total_publications }}">
+                                            </div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+<script>
+    // Publication Chart
+    document.addEventListener("DOMContentLoaded", function() {
+        var options = {
+            series: [{
+                name: "Publications",
+                data: [{{ report.total_publications }}]
+            }],
+            chart: {
+                type: "area",
+                height: 150,
+                sparkline: {
+                    enabled: true
+                }
+            },
+            stroke: {
+                curve: "smooth"
+            },
+            fill: {
+                opacity: 0.3,
+                type: "gradient"
+            },
+            colors: ["#206bc4"],
+            title: {
+                text: "{{ report.total_publications }}",
+                offsetX: 0,
+                style: {
+                    fontSize: "24px"
+                }
+            },
+            subtitle: {
+                text: "Publications",
+                offsetX: 0,
+                style: {
+                    fontSize: "14px"
+                }
+            }
+        };
+
+        var chart = new ApexCharts(document.querySelector("#publication-chart"), options);
+        chart.render();
+        
+        // Research Performance Chart
+        var researchOptions = {
+            series: [{
+                name: "Research Metrics",
+                data: [
+                    {{ report.total_publications }}, 
+                    {{ report.total_workshops }}, 
+                    {{ report.total_awards }}, 
+                    {{ report.total_projects }}
+                ]
+            }],
+            chart: {
+                type: "bar",
+                height: 250
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: false,
+                    columnWidth: "55%",
+                    endingShape: "rounded"
+                },
+            },
+            dataLabels: {
+                enabled: false
+            },
+            xaxis: {
+                categories: ["Publications", "Workshops", "Awards", "Projects"],
+            },
+            fill: {
+                opacity: 1
+            },
+            colors: ["#206bc4", "#4299e1", "#ae3ec9", "#f76707"]
+        };
+
+        var researchChart = new ApexCharts(document.querySelector("#research-chart"), researchOptions);
+        researchChart.render();
+    });
+    
+    // Export to CSV function
+    function exportTableToCSV(filename) {
+        var csv = [];
+        var rows = document.querySelectorAll("#faculty-table tr");
+        
+        for (var i = 0; i < rows.length; i++) {
+            var row = [], cols = rows[i].querySelectorAll("td, th");
+            
+            for (var j = 0; j < cols.length; j++) 
+                row.push(cols[j].innerText);
+            
+            csv.push(row.join(","));        
+        }
+
+        // Download CSV file
+        downloadCSV(csv.join("\n"), filename);
+    }
+
+    function downloadCSV(csv, filename) {
+        var csvFile;
+        var downloadLink;
+
+        // CSV file
+        csvFile = new Blob([csv], {type: "text/csv"});
+
+        // Download link
+        downloadLink = document.createElement("a");
+
+        // File name
+        downloadLink.download = filename;
+
+        // Create a link to the file
+        downloadLink.href = window.URL.createObjectURL(csvFile);
+
+        // Hide download link
+        downloadLink.style.display = "none";
+
+        // Add the link to DOM
+        document.body.appendChild(downloadLink);
+
+        // Click download link
+        downloadLink.click();
+    }
+</script>
+{% endblock %}

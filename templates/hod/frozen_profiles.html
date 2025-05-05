@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Frozen Profiles - Faculty Management System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Frozen Profiles</h2>
+                <div class="page-pretitle">{{ department.department_name }} Department</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-cards">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Frozen Faculty Profiles</h3>
+                    </div>
+                    <div class="card-body">
+                        {% if frozen_faculty %}
+                            <div class="table-responsive">
+                                <table class="table table-vcenter card-table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Faculty Name</th>
+                                            <th>Registration No.</th>
+                                            <th>Email</th>
+                                            <th>Contact</th>
+                                            <th>Frozen Since</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for faculty in frozen_faculty %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <span class="avatar me-2 avatar-sm rounded" style="background-image: url({{ url_for('static', filename='uploads/' + faculty.photo_attachment.file_path) if faculty.photo_attachment_id else url_for('static', filename='images/default-avatar.png') }})"></span>
+                                                        <div>{{ faculty.full_name }}</div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ faculty.regdno }}</td>
+                                                <td>{{ faculty.email }}</td>
+                                                <td>{{ faculty.contact_no if faculty.contact_no else 'N/A' }}</td>
+                                                <td>{{ faculty.updated_at.strftime('%d %b, %Y') }}</td>
+                                                <td>
+                                                    <div class="btn-list flex-nowrap">
+                                                        <a href="{{ url_for('faculty.view_profile', faculty_id=faculty.faculty_id) }}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="ti ti-eye"></i> View Profile
+                                                        </a>
+                                                        <a href="{{ url_for('faculty.unfreeze_profile', faculty_id=faculty.faculty_id) }}" class="btn btn-sm btn-warning">
+                                                            <i class="ti ti-lock-open"></i> Unfreeze
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="empty">
+                                <div class="empty-icon">
+                                    <i class="ti ti-lock"></i>
+                                </div>
+                                <p class="empty-title">No frozen profiles</p>
+                                <p class="empty-subtitle text-muted">
+                                    There are no frozen faculty profiles in your department.
+                                </p>
+                                <div class="empty-action">
+                                    <a href="{{ url_for('hod.department_faculty') }}" class="btn btn-primary">
+                                        <i class="ti ti-users"></i> View All Faculty
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

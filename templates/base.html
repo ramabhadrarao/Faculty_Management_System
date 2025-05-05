@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Faculty Management System{% endblock %}</title>
+    <!-- Tabler CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/css/tabler.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.13.0/tabler-icons.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="antialiased">
+    <div class="page">
+        <!-- Sidebar -->
+        {% if current_user.is_authenticated %}
+        <aside class="navbar navbar-vertical navbar-expand-lg navbar-dark">
+            <div class="container-fluid">
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#sidebar-menu" aria-controls="sidebar-menu" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <h1 class="navbar-brand navbar-brand-autodark">
+                    <a href="{{ url_for('index') }}">
+                        <img src="{{ url_for('static', filename='images/logo.svg') }}" width="110" height="32" alt="Faculty Management System" class="navbar-brand-image">
+                    </a>
+                </h1>
+                <div class="collapse navbar-collapse" id="sidebar-menu">
+                    <ul class="navbar-nav pt-lg-3">
+                        <!-- Common Menu Items -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('index') }}">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-home"></i>
+                                </span>
+                                <span class="nav-link-title">Home</span>
+                            </a>
+                        </li>
+
+                        {% if current_user.is_faculty %}
+                        <!-- Faculty Menu Items -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('faculty.dashboard') }}">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-dashboard"></i>
+                                </span>
+                                <span class="nav-link-title">Dashboard</span>
+                            </a>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#navbar-base" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="false">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-user"></i>
+                                </span>
+                                <span class="nav-link-title">Profile</span>
+                            </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{{ url_for('faculty.view_profile', faculty_id=current_user.faculty_profile.faculty_id) if current_user.faculty_profile else url_for('faculty.create_profile') }}">
+                                    {{ 'View Profile' if current_user.faculty_profile else 'Create Profile' }}
+                                </a>
+                                {% if current_user.faculty_profile %}
+                                <a class="dropdown-item" href="{{ url_for('faculty.edit_profile', faculty_id=current_user.faculty_profile.faculty_id) }}">
+                                    Edit Profile
+                                </a>
+                                <a class="dropdown-item" href="{{ url_for('faculty.edit_additional_details', faculty_id=current_user.faculty_profile.faculty_id) }}">
+                                    Additional Details
+                                </a>
+                                {% endif %}
+                            </div>
+                        </li>
+                        {% if current_user.faculty_profile %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#navbar-base" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="false">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-briefcase"></i>
+                                </span>
+                                <span class="nav-link-title">Work Experience</span>
+                            </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{{ url_for('faculty.manage_work_experience', faculty_id=current_user.faculty_profile.faculty_id) }}">
+                                    Manage Experience
+                                </a>
+                                <a class="dropdown-item" href="{{ url_for('faculty.add_work_experience', faculty_id=current_user.faculty_profile.faculty_id) }}">
+                                    Add Experience
+                                </a>
+                            </div>
+                        </li>
+                        {% endif %}
+                        {% endif %}
+
+                        {% if current_user.is_hod %}
+                        <!-- HOD Menu Items -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('hod.dashboard') }}">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-dashboard"></i>
+                                </span>
+                                <span class="nav-link-title">HOD Dashboard</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('hod.department_faculty') }}">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-users"></i>
+                                </span>
+                                <span class="nav-link-title">Department Faculty</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('hod.pending_approvals') }}">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-checklist"></i>
+                                </span>
+                                <span class="nav-link-title">Pending Approvals</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('hod.frozen_profiles') }}">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-lock"></i>
+                                </span>
+                                <span class="nav-link-title">Frozen Profiles</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('hod.department_report') }}">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-report"></i>
+                                </span>
+                                <span class="nav-link-title">Department Report</span>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% if current_user.is_admin or current_user.is_principal %}
+                        <!-- Admin/Principal Menu Items -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-dashboard"></i>
+                                </span>
+                                <span class="nav-link-title">Admin Dashboard</span>
+                            </a>
+                        </li>
+                        {% if current_user.is_admin %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#navbar-base" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="false">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-users"></i>
+                                </span>
+                                <span class="nav-link-title">User Management</span>
+                            </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{{ url_for('admin.manage_users') }}">
+                                    Manage Users
+                                </a>
+                                <a class="dropdown-item" href="{{ url_for('admin.manage_roles') }}">
+                                    Manage Roles
+                                </a>
+                            </div>
+                        </li>
+                        {% endif %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#navbar-base" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="false">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-building"></i>
+                                </span>
+                                <span class="nav-link-title">Department Management</span>
+                            </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{{ url_for('admin.manage_departments') }}">
+                                    Manage Departments
+                                </a>
+                                <a class="dropdown-item" href="{{ url_for('admin.assign_hod') }}">
+                                    Assign HOD
+                                </a>
+                            </div>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#navbar-base" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="false">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-user"></i>
+                                </span>
+                                <span class="nav-link-title">Faculty Management</span>
+                            </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{{ url_for('admin.pending_approvals') }}">
+                                    Pending Approvals
+                                </a>
+                                <a class="dropdown-item" href="{{ url_for('admin.frozen_profiles') }}">
+                                    Frozen Profiles
+                                </a>
+                                <a class="dropdown-item" href="{{ url_for('admin.faculty_report') }}">
+                                    Faculty Report
+                                </a>
+                            </div>
+                        </li>
+                        {% endif %}
+
+                        <!-- Account Menu for All Users -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#navbar-base" data-bs-toggle="dropdown" data-bs-auto-close="false" role="button" aria-expanded="false">
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+                                    <i class="ti ti-settings"></i>
+                                </span>
+                                <span class="nav-link-title">Account</span>
+                            </a>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{{ url_for('auth.change_password') }}">
+                                    Change Password
+                                </a>
+                                <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                    Logout
+                                </a>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+        {% endif %}
+
+        <div class="page-wrapper">
+            <!-- Header -->
+            <header class="navbar navbar-expand-md navbar-light d-none d-lg-flex d-print-none">
+                <div class="container-fluid">
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar-menu" aria-controls="navbar-menu" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="navbar-nav flex-row order-md-last">
+                        {% if current_user.is_authenticated %}
+                        <div class="nav-item dropdown">
+                            <a href="#" class="nav-link d-flex lh-1 text-reset p-0" data-bs-toggle="dropdown" aria-label="Open user menu">
+                                <span class="avatar avatar-sm" style="background-image: url({{ url_for('static', filename='uploads/' + current_user.faculty_profile.photo_attachment.file_path) if current_user.faculty_profile and current_user.faculty_profile.photo_attachment_id else url_for('static', filename='images/default-avatar.png') }})"></span>
+                                <div class="d-none d-xl-block ps-2">
+                                    <div>{{ current_user.first_name }} {{ current_user.last_name }}</div>
+                                    <div class="mt-1 small text-muted">
+                                        {% if current_user.is_admin %}
+                                            Administrator
+                                        {% elif current_user.is_principal %}
+                                            Principal
+                                        {% elif current_user.is_hod %}
+                                            HOD
+                                        {% elif current_user.is_faculty %}
+                                            Faculty
+                                        {% else %}
+                                            User
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+                                {% if current_user.faculty_profile %}
+                                <a href="{{ url_for('faculty.view_profile', faculty_id=current_user.faculty_profile.faculty_id) }}" class="dropdown-item">Profile</a>
+                                {% endif %}
+                                <a href="{{ url_for('auth.change_password') }}" class="dropdown-item">Change Password</a>
+                                <div class="dropdown-divider"></div>
+                                <a href="{{ url_for('auth.logout') }}" class="dropdown-item">Logout</a>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="collapse navbar-collapse" id="navbar-menu">
+                        <div>
+                            <form class="d-flex">
+                                <div class="input-icon">
+                                    <span class="input-icon-addon">
+                                        <i class="ti ti-search"></i>
+                                    </span>
+                                    <input type="text" class="form-control" placeholder="Search…">
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Page Content -->
+            <div class="page-body">
+                <div class="container-fluid">
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible" role="alert">
+                                    {{ message }}
+                                    <a href="#" class="btn-close" data-bs-dismiss="alert" aria-label="close"></a>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- Page Content -->
+                    {% block content %}{% endblock %}
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <footer class="footer footer-transparent d-print-none">
+                <div class="container-fluid">
+                    <div class="row text-center align-items-center flex-row-reverse">
+                        <div class="col-lg-auto ms-lg-auto">
+                            <ul class="list-inline list-inline-dots mb-0">
+                                <li class="list-inline-item"><a href="#" class="link-secondary">Documentation</a></li>
+                                <li class="list-inline-item"><a href="#" class="link-secondary">Help</a></li>
+                                <li class="list-inline-item"><a href="#" class="link-secondary">Contact</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-12 col-lg-auto mt-3 mt-lg-0">
+                            <ul class="list-inline list-inline-dots mb-0">
+                                <li class="list-inline-item">
+                                    Copyright © {{ now.year }}
+                                    <a href="." class="link-secondary">Faculty Management System</a>.
+                                    All rights reserved.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Tabler JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/js/tabler.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

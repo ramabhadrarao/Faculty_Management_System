@@ -1,0 +1,42 @@
+# Flask and extensions
+Flask==2.3.3
+Flask-SQLAlchemy==3.1.1
+Flask-Login==0.6.3
+Flask-JWT-Extended==4.5.3
+Flask-Principal==0.4.0
+Flask-Mail==0.9.1
+Flask-WTF==1.2.0
+Flask-Cors==4.0.0
+flask-session==0.5.0
+
+# Database
+SQLAlchemy==2.0.23
+PyMySQL==1.1.0
+mysqlclient==2.2.0
+
+# Security
+passlib==1.7.4
+Werkzeug==2.3.7
+cryptography==41.0.4
+itsdangerous==2.1.2
+
+# Utilities
+python-dotenv==1.0.0
+email-validator==2.0.0
+Pillow==10.0.1
+marshmallow==3.20.1
+WTForms==3.0.1
+Flask-Migrate==4.0.5
+
+# Date and time handling
+python-dateutil==2.8.2
+
+# Development
+pytest==7.4.2
+pytest-flask==1.2.0
+pytest-cov==4.1.0
+black==23.9.1
+flake8==6.1.0
+
+# Production
+gunicorn==21.2.0

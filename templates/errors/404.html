@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Page Not Found - Faculty Management System{% endblock %}
+
+{% block content %}
+<div class="container-xl py-5">
+    <div class="empty">
+        <div class="empty-icon">
+            <i class="ti ti-alert-circle"></i>
+        </div>
+        <p class="empty-title">404 - Page Not Found</p>
+        <p class="empty-subtitle text-muted">
+            The page you are looking for does not exist or has been moved.
+        </p>
+        <div class="empty-action">
+            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                <i class="ti ti-home"></i> Return to Home
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

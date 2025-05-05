@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}HOD Dashboard - Faculty Management System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">HOD Dashboard</h2>
+                <div class="page-pretitle">{{ department.department_name }} Department</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-deck row-cards">
+            <!-- Statistics Cards -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="subheader">Total Faculty</div>
+                        </div>
+                        <div class="h1 mb-3">{{ status_counts.total }}</div>
+                        <div class="d-flex mb-2">
+                            <div>Department Members</div>
+                            <div class="ms-auto">
+                                <a href="{{ url_for('hod.department_faculty') }}" class="text-muted">
+                                    <i class="ti ti-users"></i> View All
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="subheader">Pending Approvals</div>
+                        </div>
+                        <div class="h1 mb-3">{{ status_counts.pending }}</div>
+                        <div class="d-flex mb-2">
+                            <div>Faculty Awaiting Approval</div>
+                            <div class="ms-auto">
+                                <a href="{{ url_for('hod.pending_approvals') }}" class="text-muted">
+                                    <i class="ti ti-checklist"></i> View All
+                                </a>
+                            </div>
+                        </div>
+                        <div class="progress progress-sm">
+                            <div class="progress-bar bg-yellow" style="width: {{ (status_counts.pending / status_counts.total * 100) if status_counts.total > 0 else 0 }}%" role="progressbar" aria-valuenow="{{ status_counts.pending }}" aria-valuemin="0" aria-valuemax="{{ status_counts.total }}" aria-label="Pending">
+                                <span class="visually-hidden">{{ status_counts.pending }} Pending</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="subheader">Approved Faculty</div>
+                        </div>
+                        <div class="h1 mb-3">{{ status_counts.approved }}</div>
+                        <div class="d-flex mb-2">
+                            <div>Approved Faculty Profiles</div>
+                            <div class="ms-auto">
+                                <span class="text-green">
+                                    <i class="ti ti-check"></i> {{ ((status_counts.approved / status_counts.total) * 100) | int if status_counts.total > 0 else 0 }}%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="progress progress-sm">
+                            <div class="progress-bar bg-green" style="width: {{ (status_counts.approved / status_counts.total * 100) if status_counts.total > 0 else 0 }}%" role="progressbar" aria-valuenow="{{ status_counts.approved }}" aria-valuemin="0" aria-valuemax="{{ status_counts.total }}" aria-label="Approved">
+                                <span class="visually-hidden">{{ status_counts.approved }} Approved</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center">
+                            <div class="subheader">Frozen Profiles</div>
+                        </div>
+                        <div class="h1 mb-3">{{ status_counts.frozen }}</div>
+                        <div class="d-flex mb-2">
+                            <div>Frozen Faculty Profiles</div>
+                            <div class="ms-auto">
+                                <a href="{{ url_for('hod.frozen_profiles') }}" class="text-muted">
+                                    <i class="ti ti-lock"></i> View All
+                                </a>
+                            </div>
+                        </div>
+                        <div class="progress progress-sm">
+                            <div class="progress-bar bg-azure" style="width: {{ (status_counts.frozen / status_counts.total * 100) if status_counts.total > 0 else 0 }}%" role="progressbar" aria-valuenow="{{ status_counts.frozen }}" aria-valuemin="0" aria-valuemax="{{ status_counts.total }}" aria-label="Frozen">
+                                <span class="visually-hidden">{{ status_counts.frozen }} Frozen</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Department Profile Card -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Department Information</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <span class="avatar avatar-xl rounded" style="background-image: url({{ url_for('static', filename='uploads/' + department.logo) if department.logo else url_for('static', filename='images/department-logo.png') }})"></span>
+                            </div>
+                            <div class="col">
+                                <h3 class="mb-1">{{ department.department_name }}</h3>
+                                <div class="text-muted">Department Code: {{ department.department_code }}</div>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-2">
+                                        <i class="ti ti-building me-2 text-muted"></i>
+                                        <span>{{ department.college.college_name if department.college else 'N/A' }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-2">
+                                        <i class="ti ti-users me-2 text-muted"></i>
+                                        <span>{{ status_counts.total }} Faculty Members</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex">
+                            <a href="{{ url_for('hod.department_report') }}" class="btn btn-outline-primary">
+                                <i class="ti ti-report me-2"></i> Generate Department Report
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HOD Profile Card -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">HOD Profile</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <span class="avatar avatar-xl rounded" style="background-image: url({{ url_for('static', filename='uploads/' + hod.photo_attachment.file_path) if hod.photo_attachment_id else url_for('static', filename='images/default-avatar.png') }})"></span>
+                            </div>
+                            <div class="col">
+                                <h3 class="mb-1">{{ hod.full_name }}</h3>
+                                <div class="text-muted">Head of Department</div>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-2">
+                                        <i class="ti ti-mail me-2 text-muted"></i>
+                                        <span>{{ hod.email }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-2">
+                                        <i class="ti ti-phone me-2 text-muted"></i>
+                                        <span>{{ hod.contact_no }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-2">
+                                        <i class="ti ti-calendar me-2 text-muted"></i>
+                                        <span>Joined on {{ hod.join_date.strftime('%d %b, %Y') }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex">
+                            <a href="{{ url_for('faculty.view_profile', faculty_id=hod.faculty_id) }}" class="btn btn-outline-primary">
+                                <i class="ti ti-user me-2"></i> View Full Profile
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Faculty Registrations -->
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Recent Faculty Registrations</h3>
+                    </div>
+                    <div class="card-body">
+                        {% if recent_faculty %}
+                            <div class="table-responsive">
+                                <table class="table table-vcenter card-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Faculty Name</th>
+                                            <th>Email</th>
+                                            <th>Registered On</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for faculty in recent_faculty %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <span class="avatar me-2 avatar-sm rounded" style="background-image: url({{ url_for('static', filename='uploads/' + faculty.photo_attachment.file_path) if faculty.photo_attachment_id else url_for('static', filename='images/default-avatar.png') }})"></span>
+                                                        <div>{{ faculty.full_name }}</div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ faculty.email }}</td>
+                                                <td>{{ faculty.created_at.strftime('%d %b, %Y') }}</td>
+                                                <td>
+                                                    {% if faculty.profile_status == 'pending' %}
+                                                        <span class="badge bg-yellow">Pending</span>
+                                                    {% elif faculty.profile_status == 'approved' %}
+                                                        <span class="badge bg-green">Approved</span>
+                                                    {% elif faculty.profile_status == 'frozen' %}
+                                                        <span class="badge bg-azure">Frozen</span>
+                                                    {% elif faculty.profile_status == 'unfrozen' %}
+                                                        <span class="badge bg-blue">Unfrozen</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <a href="{{ url_for('faculty.view_profile', faculty_id=faculty.faculty_id) }}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="ti ti-eye"></i> View
+                                                    </a>
+                                                    {% if faculty.profile_status == 'pending' %}
+                                                        <a href="{{ url_for('faculty.approve_profile', faculty_id=faculty.faculty_id) }}" class="btn btn-sm btn-success">
+                                                            <i class="ti ti-check"></i> Approve
+                                                        </a>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="empty">
+                                <div class="empty-icon">
+                                    <i class="ti ti-users"></i>
+                                </div>
+                                <p class="empty-title">No recent registrations</p>
+                                <p class="empty-subtitle text-muted">
+                                    There have been no recent faculty registrations in your department.
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

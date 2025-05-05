@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Pending Approvals - Faculty Management System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Pending Approvals</h2>
+                <div class="page-pretitle">{{ department.department_name }} Department</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-cards">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Faculty Profiles Pending Approval</h3>
+                    </div>
+                    <div class="card-body">
+                        {% if pending_faculty %}
+                            <div class="table-responsive">
+                                <table class="table table-vcenter card-table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Faculty Name</th>
+                                            <th>Registration No.</th>
+                                            <th>Email</th>
+                                            <th>Contact</th>
+                                            <th>Submission Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for faculty in pending_faculty %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <span class="avatar me-2 avatar-sm rounded" style="background-image: url({{ url_for('static', filename='uploads/' + faculty.photo_attachment.file_path) if faculty.photo_attachment_id else url_for('static', filename='images/default-avatar.png') }})"></span>
+                                                        <div>{{ faculty.full_name }}</div>
+                                                    </div>
+                                                </td>
+                                                <td>{{ faculty.regdno }}</td>
+                                                <td>{{ faculty.email }}</td>
+                                                <td>{{ faculty.contact_no if faculty.contact_no else 'N/A' }}</td>
+                                                <td>{{ faculty.created_at.strftime('%d %b, %Y') }}</td>
+                                                <td>
+                                                    <div class="btn-list flex-nowrap">
+                                                        <a href="{{ url_for('faculty.view_profile', faculty_id=faculty.faculty_id) }}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="ti ti-eye"></i> View Profile
+                                                        </a>
+                                                        <a href="{{ url_for('faculty.approve_profile', faculty_id=faculty.faculty_id) }}" class="btn btn-sm btn-success">
+                                                            <i class="ti ti-check"></i> Approve
+                                                        </a>
+                                                        <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#modal-reject-{{ faculty.faculty_id }}">
+                                                            <i class="ti ti-x"></i> Reject
+                                                        </button>
+                                                    </div>
+                                                    
+                                                    <!-- Reject Modal -->
+                                                    <div class="modal modal-blur fade" id="modal-reject-{{ faculty.faculty_id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                                        <div class="modal-dialog modal-dialog-centered" role="document">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title">Reject Profile</h5>
+                                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <div class="mb-3">
+                                                                        <label class="form-label">Rejection Reason</label>
+                                                                        <textarea class="form-control" rows="4" placeholder="Provide a reason for rejection..."></textarea>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                    <button type="button" class="btn btn-danger ms-auto">Reject Profile</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="empty">
+                                <div class="empty-icon">
+                                    <i class="ti ti-checklist"></i>
+                                </div>
+                                <p class="empty-title">No pending approvals</p>
+                                <p class="empty-subtitle text-muted">
+                                    There are no faculty profiles pending for approval in your department.
+                                </p>
+                                <div class="empty-action">
+                                    <a href="{{ url_for('hod.department_faculty') }}" class="btn btn-primary">
+                                        <i class="ti ti-users"></i> View All Faculty
+                                    </a>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
