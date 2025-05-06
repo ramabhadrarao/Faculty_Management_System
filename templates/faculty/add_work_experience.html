@@ -19,7 +19,7 @@
         <div class="row row-cards">
             <div class="col-12">
                 <form action="{{ url_for('faculty.add_work_experience', faculty_id=faculty.faculty_id) }}" method="POST" enctype="multipart/form-data" class="card">
-                    {{ form.csrf_token }}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="card-header">
                         <h3 class="card-title">Work Experience Details</h3>
                     </div>

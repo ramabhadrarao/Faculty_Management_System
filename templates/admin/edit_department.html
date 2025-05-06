@@ -1,14 +1,15 @@
+```html
 {% extends "base.html" %}
 
-{% block title %}Add Department - Faculty Management System{% endblock %}
+{% block title %}Edit Department - Faculty Management System{% endblock %}
 
 {% block content %}
 <div class="page-header d-print-none">
     <div class="container-xl">
         <div class="row g-2 align-items-center">
             <div class="col">
-                <h2 class="page-title">Add Department</h2>
-                <div class="page-pretitle">Create a new academic department</div>
+                <h2 class="page-title">Edit Department</h2>
+                <div class="page-pretitle">Update department information</div>
             </div>
             <div class="col-auto ms-auto">
                 <div class="btn-list">
@@ -25,19 +26,19 @@
     <div class="container-xl">
         <div class="row row-cards">
             <div class="col-12">
-                <form action="{{ url_for('admin.add_department') }}" method="POST" enctype="multipart/form-data" class="card">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <form action="{{ url_for('admin.edit_department', department_id=department.department_id) }}" method="POST" enctype="multipart/form-data" class="card">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="card-header">
                         <h3 class="card-title">Department Information</h3>
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
                             <label class="form-label required">Department Name</label>
-                            <input type="text" name="department_name" class="form-control" placeholder="Department Name" required>
+                            <input type="text" name="department_name" class="form-control" value="{{ department.department_name }}" required>
                         </div>
                         <div class="mb-3">
                             <label class="form-label required">Department Code</label>
-                            <input type="text" name="department_code" class="form-control" placeholder="Department Code" required>
+                            <input type="text" name="department_code" class="form-control" value="{{ department.department_code }}" required>
                             <small class="form-hint">Unique code for the department (e.g., CSE, ECE, MECH)</small>
                         </div>
                         <div class="mb-3">
@@ -45,18 +46,23 @@
                             <select name="college_id" class="form-select" required>
                                 <option value="">Select College</option>
                                 {% for college in colleges %}
-                                    <option value="{{ college.college_id }}">{{ college.college_name }}</option>
+                                    <option value="{{ college.college_id }}" {% if department.college_id == college.college_id %}selected{% endif %}>{{ college.college_name }}</option>
                                 {% endfor %}
                             </select>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Department Logo</label>
+                            {% if department.logo %}
+                                <div class="mb-2">
+                                    <img src="{{ url_for('static', filename='uploads/' + department.logo) }}" alt="Department Logo" class="img-thumbnail" style="max-height: 100px;">
+                                </div>
+                            {% endif %}
                             <input type="file" name="logo" class="form-control" accept="image/*">
-                            <small class="form-hint">Upload a logo for the department (optional)</small>
+                            <small class="form-hint">Upload a new logo to replace the existing one (optional)</small>
                         </div>
                     </div>
                     <div class="card-footer text-end">
-                        <button type="submit" class="btn btn-primary">Add Department</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
                         <a href="{{ url_for('admin.manage_departments') }}" class="btn btn-outline-secondary">Cancel</a>
                     </div>
                 </form>
@@ -65,3 +71,4 @@
     </div>
 </div>
 {% endblock %}
+```

@@ -26,7 +26,8 @@
         <div class="row row-cards">
             <div class="col-12">
                 <form action="{{ url_for('admin.assign_hod') }}" method="POST" class="card">
-                    {{ form.csrf_token }}
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
                     <div class="card-header">
                         <h3 class="card-title">Assign Head of Department (HOD)</h3>
                     </div>
@@ -90,10 +91,9 @@
                                         {% set hod = None %}
                                         {% set hod_user = None %}
                                         {% for faculty in department.faculty_members %}
-                                            {% if faculty.user and faculty.user.is_hod %}
+                                            {% if faculty.user and faculty.user.is_hod and not hod %}
                                                 {% set hod = faculty %}
                                                 {% set hod_user = faculty.user %}
-                                                {% break %}
                                             {% endif %}
                                         {% endfor %}
                                         

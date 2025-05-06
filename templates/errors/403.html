@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Access Denied - Faculty Management System{% endblock %}
+
+{% block content %}
+<div class="container-xl py-5">
+    <div class="empty">
+        <div class="empty-icon">
+            <i class="ti ti-lock-access"></i>
+        </div>
+        <p class="empty-title">403 - Access Denied</p>
+        <p class="empty-subtitle text-muted">
+            You do not have permission to access this page.
+        </p>
+        <div class="empty-action">
+            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                <i class="ti ti-home"></i> Return to Home
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

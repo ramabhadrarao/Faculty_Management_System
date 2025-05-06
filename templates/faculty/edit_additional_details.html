@@ -19,7 +19,7 @@
         <div class="row row-cards">
             <div class="col-12">
                 <form action="{{ url_for('faculty.edit_additional_details', faculty_id=faculty.faculty_id) }}" method="POST" class="card">
-                    {{ form.csrf_token }}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <div class="card-header">
                         <ul class="nav nav-tabs card-header-tabs" data-bs-toggle="tabs">
                             <li class="nav-item">

@@ -1,0 +1,199 @@
+
+{% extends "base.html" %}
+
+{% block title %}Manage Roles - Faculty Management System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Manage Roles</h2>
+                <div class="page-pretitle">User Roles and Permissions</div>
+            </div>
+            <div class="col-auto ms-auto">
+                <div class="btn-list">
+                    <a href="#" class="btn btn-primary d-none d-sm-inline-block" data-bs-toggle="modal" data-bs-target="#modal-add-role">
+                        <i class="ti ti-plus"></i> Add Role
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-cards">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">System Roles</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-vcenter card-table">
+                                <thead>
+                                    <tr>
+                                        <th>Role Name</th>
+                                        <th>Description</th>
+                                        <th>Users</th>
+                                        <th>Permissions</th>
+                                        <th class="w-1">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for role in roles %}
+                                        <tr>
+                                            <td>{{ role.name }}</td>
+                                            <td>{{ role.description }}</td>
+                                            <td>
+                                                <span class="badge bg-azure">{{ role.users|length }} Users</span>
+                                            </td>
+                                            <td>
+                                                {% for permission in role.permissions %}
+                                                    <span class="badge bg-green">{{ permission.name }}</span>
+                                                {% endfor %}
+                                                {% if role.permissions|length == 0 %}
+                                                    <span class="text-muted">No specific permissions</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-list flex-nowrap">
+                                                    <a href="{{ url_for('admin.edit_role', role_id=role.role_id) }}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="ti ti-edit"></i> Edit
+                                                    </a>
+                                                    <div class="dropdown">
+                                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                                            <i class="ti ti-dots-vertical"></i>
+                                                        </button>
+                                                        <div class="dropdown-menu">
+                                                            <a href="#" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#modal-permissions-{{ role.role_id }}">
+                                                                <i class="ti ti-key me-2"></i> Manage Permissions
+                                                            </a>
+                                                            {% if role.name not in ['admin', 'faculty', 'hod', 'principal', 'student'] %}
+                                                                <form action="{{ url_for('admin.delete_role', role_id=role.role_id) }}" method="POST" class="dropdown-item p-0">
+                                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                                    <button type="submit" class="dropdown-item text-danger" onclick="return confirm('Are you sure you want to delete this role? This will remove the role from all users.')">
+                                                                        <i class="ti ti-trash me-2"></i> Delete
+                                                                    </button>
+                                                                </form>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Permissions Modal -->
+                                                <div class="modal modal-blur fade" id="modal-permissions-{{ role.role_id }}" tabindex="-1" role="dialog" aria-hidden="true">
+                                                    <div class="modal-dialog modal-dialog-centered" role="document">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title">Manage Permissions for {{ role.name }}</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                            </div>
+                                                            <form action="{{ url_for('admin.update_role_permissions', role_id=role.role_id) }}" method="POST">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                                <div class="modal-body">
+                                                                    <p>Select the permissions for this role:</p>
+                                                                    <div class="form-selectgroup form-selectgroup-boxes d-flex flex-column">
+                                                                        <!-- Note: You'll need to implement a proper permissions system and populate this list dynamically -->
+                                                                        <label class="form-selectgroup-item flex-fill">
+                                                                            <input type="checkbox" name="permission_view" class="form-selectgroup-input" checked>
+                                                                            <div class="form-selectgroup-label d-flex align-items-center p-3">
+                                                                                <div class="me-3">
+                                                                                    <span class="form-selectgroup-check"></span>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <span class="form-selectgroup-title strong mb-1">View Data</span>
+                                                                                    <span class="d-block text-muted">View faculty profiles and department data</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </label>
+                                                                        <label class="form-selectgroup-item flex-fill">
+                                                                            <input type="checkbox" name="permission_edit" class="form-selectgroup-input">
+                                                                            <div class="form-selectgroup-label d-flex align-items-center p-3">
+                                                                                <div class="me-3">
+                                                                                    <span class="form-selectgroup-check"></span>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <span class="form-selectgroup-title strong mb-1">Edit Data</span>
+                                                                                    <span class="d-block text-muted">Edit faculty profiles and department data</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </label>
+                                                                        <label class="form-selectgroup-item flex-fill">
+                                                                            <input type="checkbox" name="permission_approve" class="form-selectgroup-input">
+                                                                            <div class="form-selectgroup-label d-flex align-items-center p-3">
+                                                                                <div class="me-3">
+                                                                                    <span class="form-selectgroup-check"></span>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <span class="form-selectgroup-title strong mb-1">Approve/Reject</span>
+                                                                                    <span class="d-block text-muted">Approve or reject faculty profiles</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </label>
+                                                                        <label class="form-selectgroup-item flex-fill">
+                                                                            <input type="checkbox" name="permission_admin" class="form-selectgroup-input">
+                                                                            <div class="form-selectgroup-label d-flex align-items-center p-3">
+                                                                                <div class="me-3">
+                                                                                    <span class="form-selectgroup-check"></span>
+                                                                                </div>
+                                                                                <div>
+                                                                                    <span class="form-selectgroup-title strong mb-1">Administrative</span>
+                                                                                    <span class="d-block text-muted">Full administrative access</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </label>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                                    <button type="submit" class="btn btn-primary ms-auto">Save Permissions</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Role Modal -->
+<div class="modal modal-blur fade" id="modal-add-role" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Role</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('admin.add_role') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label required">Role Name</label>
+                        <input type="text" name="name" class="form-control" placeholder="Role Name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3" placeholder="Role Description"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link link-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary ms-auto">Add Role</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

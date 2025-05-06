@@ -6,7 +6,7 @@ from models.department import Department, College, Program, Branch
 from models.user import User, Role, UserRole
 from config.constants import UserRoles, ProfileStatus
 from middleware.auth_middleware import admin_required, principal_required
-
+from flask_wtf import FlaskForm
 
 class AdminController:
     """Controller for admin-related operations."""
@@ -54,12 +54,121 @@ class AdminController:
         if not current_user.is_admin:
             flash('Access denied', 'danger')
             return redirect(url_for('auth.login'))
+        
+        # Handle POST request for adding a new user
+        if request.method == 'POST':
+            username = request.form.get('username')
+            email = request.form.get('email')
+            password = request.form.get('password')
+            confirm_password = request.form.get('confirm_password')
+            first_name = request.form.get('first_name')
+            last_name = request.form.get('last_name')
             
+            # Basic validation
+            if not username or not email or not password:
+                flash('All required fields must be filled out', 'danger')
+                return redirect(url_for('admin.manage_users'))
+                
+            if password != confirm_password:
+                flash('Passwords do not match', 'danger')
+                return redirect(url_for('admin.manage_users'))
+            
+            # Check if username or email already exists
+            if User.query.filter_by(username=username).first():
+                flash('Username already exists', 'danger')
+                return redirect(url_for('admin.manage_users'))
+                
+            if User.query.filter_by(email=email).first():
+                flash('Email already exists', 'danger')
+                return redirect(url_for('admin.manage_users'))
+            
+            # Create new user
+            user = User(
+                username=username,
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                is_active=True
+            )
+            user.password = password  # This will hash the password
+            
+            # Add roles if selected
+            roles = Role.query.all()
+            for role in roles:
+                if request.form.get(f'role_{role.role_id}') == 'on':
+                    user.roles.append(role)
+            
+            # If no roles selected, add faculty role by default
+            if not user.roles:
+                faculty_role = Role.query.filter_by(name=UserRoles.FACULTY).first()
+                if faculty_role:
+                    user.roles.append(faculty_role)
+            
+            db.session.add(user)
+            db.session.commit()
+            
+            flash('User added successfully', 'success')
+            return redirect(url_for('admin.manage_users'))
+                
+        # GET request - display users
         users = User.query.all()
         roles = Role.query.all()
         
         return render_template('admin/manage_users.html', users=users, roles=roles)
-    
+    @staticmethod
+    def deactivate_user(user_id):
+        """Deactivate a user."""
+        if not current_user.is_admin:
+            flash('Access denied', 'danger')
+            return redirect(url_for('auth.login'))
+            
+        user = User.query.get_or_404(user_id)
+        
+        # Prevent deactivating self
+        if user.user_id == current_user.user_id:
+            flash('You cannot deactivate your own account', 'danger')
+            return redirect(url_for('admin.manage_users'))
+        
+        user.is_active = False
+        db.session.commit()
+        
+        flash('User deactivated successfully', 'success')
+        return redirect(url_for('admin.manage_users'))
+    @staticmethod
+    def activate_user(user_id):
+        """Activate a user."""
+        if not current_user.is_admin:
+            flash('Access denied', 'danger')
+            return redirect(url_for('auth.login'))
+            
+        user = User.query.get_or_404(user_id)
+        
+        user.is_active = True
+        db.session.commit()
+        
+        flash('User activated successfully', 'success')
+        return redirect(url_for('admin.manage_users'))
+    @staticmethod
+    def reset_user_password(user_id):
+        """Reset a user's password."""
+        if not current_user.is_admin:
+            flash('Access denied', 'danger')
+            return redirect(url_for('auth.login'))
+            
+        user = User.query.get_or_404(user_id)
+        
+        # Generate random password
+        import secrets
+        import string
+        alphabet = string.ascii_letters + string.digits
+        new_password = ''.join(secrets.choice(alphabet) for i in range(10))
+        
+        # Set new password
+        user.password = new_password
+        db.session.commit()
+        
+        flash(f'Password reset successfully. New password: {new_password}', 'success')
+        return redirect(url_for('admin.edit_user', user_id=user_id))
     @staticmethod
     def edit_user(user_id):
         """Edit a user's details and roles."""
@@ -140,6 +249,11 @@ class AdminController:
         if not (current_user.is_admin or current_user.is_principal):
             flash('Access denied', 'danger')
             return redirect(url_for('auth.login'))
+        # Create a simple form for CSRF protection
+        class SimpleForm(FlaskForm):
+            pass
+        
+        form = SimpleForm()
             
         if request.method == 'POST':
             department_name = request.form.get('department_name')
@@ -178,7 +292,7 @@ class AdminController:
         
         # Get colleges for dropdown
         colleges = College.query.all()
-        return render_template('admin/add_department.html', colleges=colleges)
+        return render_template('admin/add_department.html', colleges=colleges,form=form)
     
     @staticmethod
     def edit_department(department_id):
@@ -209,7 +323,34 @@ class AdminController:
         # Get colleges for dropdown
         colleges = College.query.all()
         return render_template('admin/edit_department.html', department=department, colleges=colleges)
-    
+    @staticmethod
+    def delete_department(department_id):
+        """Delete a department."""
+        if not (current_user.is_admin or current_user.is_principal):
+            flash('Access denied', 'danger')
+            return redirect(url_for('auth.login'))
+            
+        department = Department.query.get_or_404(department_id)
+        
+        # Check if department has faculty assigned
+        faculty_count = Faculty.query.filter_by(department_id=department_id).count()
+        if faculty_count > 0:
+            flash(f'Cannot delete department with {faculty_count} faculty members assigned', 'danger')
+            return redirect(url_for('admin.manage_departments'))
+        
+        # Delete department's logo if it exists
+        if department.logo:
+            from controllers.faculty_controller import FacultyController
+            logo_path = os.path.join(current_app.config['UPLOAD_FOLDER'], department.logo)
+            if os.path.exists(logo_path):
+                os.remove(logo_path)
+        
+        # Delete department
+        db.session.delete(department)
+        db.session.commit()
+        
+        flash('Department deleted successfully', 'success')
+        return redirect(url_for('admin.manage_departments'))
     @staticmethod
     def manage_roles():
         """Display and manage roles and permissions."""
@@ -329,13 +470,58 @@ class AdminController:
                               department_stats=department_stats,
                               status_counts=status_counts,
                               recent_activities=recent_activities)
-    
+    @staticmethod
+    def add_college():
+        """Add a new college."""
+        if not (current_user.is_admin or current_user.is_principal):
+            flash('Access denied', 'danger')
+            return redirect(url_for('auth.login'))
+            
+        if request.method == 'POST':
+            college_name = request.form.get('college_name')
+            college_code = request.form.get('college_code')
+            
+            # Validation
+            if not college_name or not college_code:
+                flash('All fields are required', 'danger')
+                return redirect(url_for('admin.manage_departments'))
+            
+            # Check if college code already exists
+            if College.query.filter_by(college_code=college_code).first():
+                flash('College code already exists', 'danger')
+                return redirect(url_for('admin.manage_departments'))
+            
+            # Create college
+            college = College(
+                college_name=college_name,
+                college_code=college_code
+            )
+            
+            # Handle logo upload
+            if 'logo' in request.files and request.files['logo'].filename:
+                from controllers.faculty_controller import FacultyController
+                logo_file = request.files['logo']
+                filename = FacultyController._save_attachment(logo_file, 'gallery_image').file_path
+                college.logo = filename
+            
+            db.session.add(college)
+            db.session.commit()
+            
+            flash('College added successfully', 'success')
+            return redirect(url_for('admin.manage_departments'))
+        
+        return render_template('admin/add_college.html')
     @staticmethod
     def assign_hod():
         """Assign faculty as HOD."""
         if not (current_user.is_admin or current_user.is_principal):
             flash('Access denied', 'danger')
             return redirect(url_for('auth.login'))
+        # Create a simple form for CSRF protection
+        class SimpleForm(FlaskForm):
+            pass
+        
+        form = SimpleForm()
             
         if request.method == 'POST':
             faculty_id = request.form.get('faculty_id')
@@ -366,7 +552,8 @@ class AdminController:
             else:
                 flash(f'{faculty.full_name} is already a HOD', 'info')
             
-            return redirect(url_for('admin.manage_departments'))
+                return render_template('admin/assign_hod.html', departments=departments, faculty_by_dept=faculty_by_dept, form=form)
+
         
         # Get departments and faculty
         departments = Department.query.all()

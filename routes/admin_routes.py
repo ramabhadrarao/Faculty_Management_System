@@ -12,7 +12,7 @@ def dashboard():
     return AdminController.dashboard()
 
 # User management
-@admin_bp.route('/users')
+@admin_bp.route('/users', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def manage_users():
@@ -48,6 +48,12 @@ def add_department():
 @admin_required
 def edit_department(department_id):
     return AdminController.edit_department(department_id)
+
+@admin_bp.route('/departments/delete/<int:department_id>', methods=['POST'])
+@login_required
+@admin_required
+def delete_department(department_id):
+    return AdminController.delete_department(department_id)
 
 # Role management
 @admin_bp.route('/roles')
@@ -89,3 +95,25 @@ def faculty_report():
 @admin_required
 def assign_hod():
     return AdminController.assign_hod()
+
+@admin_bp.route('/colleges/add', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_college():
+    return AdminController.add_college()
+
+@admin_bp.route('/users/deactivate/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def deactivate_user(user_id):
+    return AdminController.deactivate_user(user_id)
+@admin_bp.route('/users/reset-password/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def reset_user_password(user_id):
+    return AdminController.reset_user_password(user_id)
+@admin_bp.route('/users/activate/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def activate_user(user_id):
+    return AdminController.activate_user(user_id)
