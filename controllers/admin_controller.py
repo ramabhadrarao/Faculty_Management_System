@@ -511,6 +511,7 @@ class AdminController:
             return redirect(url_for('admin.manage_departments'))
         
         return render_template('admin/add_college.html')
+    
     @staticmethod
     def assign_hod():
         """Assign faculty as HOD."""
@@ -525,10 +526,11 @@ class AdminController:
             
         if request.method == 'POST':
             faculty_id = request.form.get('faculty_id')
+            department_id = request.form.get('department_id')  # Make sure to get department_id
             
             # Validation
-            if not faculty_id:
-                flash('No faculty selected', 'danger')
+            if not faculty_id or not department_id:
+                flash('Faculty and department must be selected', 'danger')
                 return redirect(url_for('admin.manage_departments'))
             
             # Get faculty
@@ -551,9 +553,6 @@ class AdminController:
                 flash(f'{faculty.full_name} has been assigned as HOD', 'success')
             else:
                 flash(f'{faculty.full_name} is already a HOD', 'info')
-            
-                return render_template('admin/assign_hod.html', departments=departments, faculty_by_dept=faculty_by_dept, form=form)
-
         
         # Get departments and faculty
         departments = Department.query.all()
@@ -562,4 +561,4 @@ class AdminController:
         for dept in departments:
             faculty_by_dept[dept.department_id] = Faculty.query.filter_by(department_id=dept.department_id).all()
         
-        return render_template('admin/assign_hod.html', departments=departments, faculty_by_dept=faculty_by_dept)
+        return render_template('admin/assign_hod.html', departments=departments, faculty_by_dept=faculty_by_dept, form=form)

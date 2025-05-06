@@ -88,27 +88,27 @@
                                 <tbody>
                                     <!-- For each department, find and display the current HOD -->
                                     {% for department in departments %}
-                                        {% set hod = None %}
-                                        {% set hod_user = None %}
-                                        {% for faculty in department.faculty_members %}
-                                            {% if faculty.user and faculty.user.is_hod and not hod %}
-                                                {% set hod = faculty %}
-                                                {% set hod_user = faculty.user %}
+                                    {% set hod = None %}
+                                    {% set hod_user = None %}
+                                    {% for faculty in department.faculty_members %}
+                                        {% if faculty.user and faculty.user.is_hod and not hod %}
+                                            {% set hod = faculty %}
+                                            {% set hod_user = faculty.user %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    <tr>
+                                        <td>{{ department.department_name }}</td>
+                                        <td>
+                                            {% if hod %}
+                                                <div class="d-flex py-1 align-items-center">
+                                                    <span class="avatar me-2 avatar-sm rounded" style="background-image: url({{ url_for('static', filename='uploads/' + hod.photo_attachment.file_path) if hod.photo_attachment_id else url_for('static', filename='images/default-avatar.png') }})"></span>
+                                                    <div>{{ hod.full_name }}</div>
+                                                </div>
+                                            {% else %}
+                                                <span class="text-muted">No HOD Assigned</span>
                                             {% endif %}
-                                        {% endfor %}
-                                        
-                                        <tr>
-                                            <td>{{ department.department_name }}</td>
-                                            <td>
-                                                {% if hod %}
-                                                    <div class="d-flex py-1 align-items-center">
-                                                        <span class="avatar me-2 avatar-sm rounded" style="background-image: url({{ url_for('static', filename='uploads/' + hod.photo_attachment.file_path) if hod.photo_attachment_id else url_for('static', filename='images/default-avatar.png') }})"></span>
-                                                        <div>{{ hod.full_name }}</div>
-                                                    </div>
-                                                {% else %}
-                                                    <span class="text-muted">No HOD Assigned</span>
-                                                {% endif %}
-                                            </td>
+                                        </td>
                                             <td>{{ hod.email if hod else 'N/A' }}</td>
                                             <td>{{ hod.contact_no if hod and hod.contact_no else 'N/A' }}</td>
                                             <td>
