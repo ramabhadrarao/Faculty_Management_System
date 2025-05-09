@@ -7,7 +7,7 @@ from models.base import db
 from models.faculty import (
     Faculty, FacultyAdditionalDetails, WorkExperience, TeachingActivity,
     ResearchPublication, WorkshopSeminar, MDPFDP, HonoursAward,
-    ResearchConsultancy, Activity
+    ResearchConsultancy, Activity, LookupTable  
 )
 from models.attachment import Attachment
 from models.department import Department, College
@@ -558,3 +558,719 @@ class FacultyController:
             
         db.session.delete(attachment)
         db.session.commit()
+    # controllers/faculty_controller.py
+    # Add these methods to the existing FacultyController class
+
+    @staticmethod
+    def manage_teaching_activities(faculty_id):
+        """Manage teaching activities for a faculty member."""
+        faculty = Faculty.query.get_or_404(faculty_id)
+        
+        # Check permissions
+        if current_user.is_faculty and faculty.user_id != current_user.user_id:
+            flash('You can only manage your own teaching activities', 'danger')
+            return redirect(url_for('faculty.dashboard'))
+            
+        # Check if profile is frozen
+        if not faculty.can_edit():
+            flash('This profile is currently frozen and cannot be edited', 'warning')
+            return redirect(url_for('faculty.view_profile', faculty_id=faculty_id))
+        
+        # Get existing teaching activities
+        activities = TeachingActivity.query.filter_by(faculty_id=faculty_id).all()
+        
+        return render_template('faculty/manage_teaching_activities.html', 
+                            faculty=faculty, 
+                            activities=activities)
+
+    @staticmethod
+    def add_teaching_activity(faculty_id):
+        """Add a new teaching activity."""
+        faculty = Faculty.query.get_or_404(faculty_id)
+        
+        # Check permissions
+        if current_user.is_faculty and faculty.user_id != current_user.user_id:
+            flash('You can only add to your own profile', 'danger')
+            return redirect(url_for('faculty.dashboard'))
+            
+        # Check if profile is frozen
+        if not faculty.can_edit():
+            flash('This profile is currently frozen and cannot be edited', 'warning')
+            return redirect(url_for('faculty.view_profile', faculty_id=faculty_id))
+        
+        if request.method == 'POST':
+            # Get form data
+            course_name = request.form.get('course_name')
+            semester = request.form.get('semester')
+            year = request.form.get('year')
+            course_code = request.form.get('course_code')
+            description = request.form.get('description')
+            
+            # Validation
+            if not course_name:
+                flash('Course name is required', 'danger')
+                return redirect(url_for('faculty.add_teaching_activity', faculty_id=faculty_id))
+            
+            # Create new teaching activity
+            activity = TeachingActivity(
+                faculty_id=faculty_id,
+                course_name=course_name,
+                semester=semester,
+                year=int(year) if year else None,
+                course_code=course_code,
+                description=description
+            )
+            
+            # Handle attachment upload
+            if 'attachment' in request.files and request.files['attachment'].filename:
+                attachment_file = request.files['attachment']
+                attachment = FacultyController._save_attachment(attachment_file, 'attachment')
+                activity.attachment_id = attachment.attachment_id
+            
+            db.session.add(activity)
+            db.session.commit()
+            
+            flash('Teaching activity added successfully', 'success')
+            return redirect(url_for('faculty.manage_teaching_activities', faculty_id=faculty_id))
+        
+        return render_template('faculty/add_teaching_activity.html', faculty=faculty)
+
+    @staticmethod
+    def delete_teaching_activity(faculty_id, activity_id):
+        """Delete a teaching activity."""
+        faculty = Faculty.query.get_or_404(faculty_id)
+        activity = TeachingActivity.query.get_or_404(activity_id)
+        
+        # Check if activity belongs to the faculty
+        if activity.faculty_id != faculty.faculty_id:
+            flash('Invalid teaching activity', 'danger')
+            return redirect(url_for('faculty.manage_teaching_activities', faculty_id=faculty_id))
+        
+        # Check permissions
+        if current_user.is_faculty and faculty.user_id != current_user.user_id:
+            flash('You can only delete your own teaching activities', 'danger')
+            return redirect(url_for('faculty.dashboard'))
+            
+        # Check if profile is frozen
+        if not faculty.can_edit():
+            flash('This profile is currently frozen and cannot be edited', 'warning')
+            return redirect(url_for('faculty.view_profile', faculty_id=faculty_id))
+        
+        # Delete attachment if exists
+        if activity.attachment_id:
+            attachment = Attachment.query.get(activity.attachment_id)
+            if attachment:
+                FacultyController._delete_attachment(attachment)
+        
+        # Delete teaching activity
+        db.session.delete(activity)
+        db.session.commit()
+        
+        flash('Teaching activity deleted successfully', 'success')
+        return redirect(url_for('faculty.manage_teaching_activities', faculty_id=faculty_id))
+
+    @staticmethod
+    def manage_publications(faculty_id):
+        """Manage research publications."""
+        faculty = Faculty.query.get_or_404(faculty_id)
+        
+        # Check permissions
+        if current_user.is_faculty and faculty.user_id != current_user.user_id:
+            flash('You can only manage your own publications', 'danger')
+            return redirect(url_for('faculty.dashboard'))
+            
+        # Get existing publications
+        publications = ResearchPublication.query.filter_by(faculty_id=faculty_id).all()
+        
+        # Get publication types from lookup table
+        from config.constants import PUBLICATION_TYPES
+        publication_types = LookupTable.query.filter(
+            LookupTable.lookup_type == 'publication_type',
+            LookupTable.lookup_value.in_(PUBLICATION_TYPES)
+        ).all()
+        
+        return render_template('faculty/manage_publications.html', 
+                            faculty=faculty, 
+                            publications=publications,
+                            publication_types=publication_types)
+
+    @staticmethod
+    def add_publication(faculty_id):
+        """Add a new research publication."""
+        faculty = Faculty.query.get_or_404(faculty_id)
+        
+        # Check permissions
+        if current_user.is_faculty and faculty.user_id != current_user.user_id:
+            flash('You can only add to your own profile', 'danger')
+            return redirect(url_for('faculty.dashboard'))
+            
+        # Check if profile is frozen
+        if not faculty.can_edit():
+            flash('This profile is currently frozen and cannot be edited', 'warning')
+            return redirect(url_for('faculty.view_profile', faculty_id=faculty_id))
+        
+        # Get publication types from lookup table
+        from config.constants import PUBLICATION_TYPES
+        publication_types = LookupTable.query.filter(
+            LookupTable.lookup_type == 'publication_type',
+            LookupTable.lookup_value.in_(PUBLICATION_TYPES)
+        ).all()
+        
+        if request.method == 'POST':
+            # Get form data
+            title = request.form.get('title')
+            journal_name = request.form.get('journal_name')
+            type_id = request.form.get('type_id')
+            publication_date = request.form.get('publication_date')
+            doi = request.form.get('doi')
+            description = request.form.get('description')
+            
+            # Validation
+            if not title:
+                flash('Publication title is required', 'danger')
+                return redirect(url_for('faculty.add_publication', faculty_id=faculty_id))
+            
+            # Create new publication
+            publication = ResearchPublication(
+                faculty_id=faculty_id,
+                title=title,
+                journal_name=journal_name,
+                type_id=type_id,
+                publication_date=datetime.strptime(publication_date, '%Y-%m-%d') if publication_date else None,
+                doi=doi,
+                description=description
+            )
+            
+            # Handle attachment upload
+            if 'attachment' in request.files and request.files['attachment'].filename:
+                attachment_file = request.files['attachment']
+                attachment = FacultyController._save_attachment(attachment_file, 'attachment')
+                publication.attachment_id = attachment.attachment_id
+            
+            db.session.add(publication)
+            db.session.commit()
+            
+            flash('Research publication added successfully', 'success')
+            return redirect(url_for('faculty.manage_publications', faculty_id=faculty_id))
+        
+        return render_template('faculty/add_publication.html', 
+                            faculty=faculty,
+                            publication_types=publication_types)
+
+    @staticmethod
+    def delete_publication(faculty_id, publication_id):
+        """Delete a research publication."""
+        faculty = Faculty.query.get_or_404(faculty_id)
+        publication = ResearchPublication.query.get_or_404(publication_id)
+        
+        # Check if publication belongs to the faculty
+        if publication.faculty_id != faculty.faculty_id:
+            flash('Invalid publication', 'danger')
+            return redirect(url_for('faculty.manage_publications', faculty_id=faculty_id))
+        
+        # Check permissions
+        if current_user.is_faculty and faculty.user_id != current_user.user_id:
+            flash('You can only delete your own publications', 'danger')
+            return redirect(url_for('faculty.dashboard'))
+            
+        # Check if profile is frozen
+        if not faculty.can_edit():
+            flash('This profile is currently frozen and cannot be edited', 'warning')
+            return redirect(url_for('faculty.view_profile', faculty_id=faculty_id))
+        
+        # Delete attachment if exists
+        if publication.attachment_id:
+            attachment = Attachment.query.get(publication.attachment_id)
+            if attachment:
+                FacultyController._delete_attachment(attachment)
+        
+        # Delete publication
+        db.session.delete(publication)
+        db.session.commit()
+        
+        flash('Research publication deleted successfully', 'success')
+        return redirect(url_for('faculty.manage_publications', faculty_id=faculty_id))
+
+    @staticmethod
+    def manage_workshops(faculty_id):
+        """Manage workshops and seminars."""
+        faculty = Faculty.query.get_or_404(faculty_id)
+        
+        # Check permissions
+        if current_user.is_faculty and faculty.user_id != current_user.user_id:
+            flash('You can only manage your own workshops', 'danger')
+            return redirect(url_for('faculty.dashboard'))
+        
+        # Get existing workshops
+        workshops = WorkshopSeminar.query.filter_by(faculty_id=faculty_id).all()
+        
+        # Get workshop types from lookup table
+        from config.constants import WORKSHOP_TYPES
+        workshop_types = LookupTable.query.filter(
+            LookupTable.lookup_type == 'workshop_type',
+            LookupTable.lookup_value.in_(WORKSHOP_TYPES)
+        ).all()
+        
+        return render_template('faculty/manage_workshops.html', 
+                            faculty=faculty, 
+                            workshops=workshops,
+                            workshop_types=workshop_types)
+
+    @staticmethod
+    def add_workshop(faculty_id):
+        """Add a new workshop or seminar."""
+        faculty = Faculty.query.get_or_404(faculty_id)
+        
+        # Check permissions
+        if current_user.is_faculty and faculty.user_id != current_user.user_id:
+            flash('You can only add to your own profile', 'danger')
+            return redirect(url_for('faculty.dashboard'))
+            
+        # Check if profile is frozen
+        if not faculty.can_edit():
+            flash('This profile is currently frozen and cannot be edited', 'warning')
+            return redirect(url_for('faculty.view_profile', faculty_id=faculty_id))
+        
+        # Get workshop types from lookup table
+        from config.constants import WORKSHOP_TYPES
+        workshop_types = LookupTable.query.filter(
+            LookupTable.lookup_type == 'workshop_type',
+            LookupTable.lookup_value.in_(WORKSHOP_TYPES)
+        ).all()
+        
+        if request.method == 'POST':
+            # Get form data
+            title = request.form.get('title')
+            type_id = request.form.get('type_id')
+            location = request.form.get('location')
+            organized_by = request.form.get('organized_by')
+            date = request.form.get('date')
+            description = request.form.get('description')
+            
+            # Validation
+            if not title:
+                flash('Workshop title is required', 'danger')
+                return redirect(url_for('faculty.add_workshop', faculty_id=faculty_id))
+            
+            # Create new workshop
+            workshop = WorkshopSeminar(
+                faculty_id=faculty_id,
+                title=title,
+                type_id=type_id,
+                location=location,
+                organized_by=organized_by,
+                date=datetime.strptime(date, '%Y-%m-%d') if date else None,
+                description=description
+            )
+            
+            # Handle attachment upload
+            if 'attachment' in request.files and request.files['attachment'].filename:
+                attachment_file = request.files['attachment']
+                attachment = FacultyController._save_attachment(attachment_file, 'attachment')
+                workshop.attachment_id = attachment.attachment_id
+            
+            db.session.add(workshop)
+            db.session.commit()
+            
+            flash('Workshop/Seminar added successfully', 'success')
+            return redirect(url_for('faculty.manage_workshops', faculty_id=faculty_id))
+        
+        return render_template('faculty/add_workshop.html', 
+                            faculty=faculty,
+                            workshop_types=workshop_types)
+
+    @staticmethod
+    def delete_workshop(faculty_id, workshop_id):
+        """Delete a workshop or seminar."""
+        faculty = Faculty.query.get_or_404(faculty_id)
+        workshop = WorkshopSeminar.query.get_or_404(workshop_id)
+        
+        # Check if workshop belongs to the faculty
+        if workshop.faculty_id != faculty.faculty_id:
+            flash('Invalid workshop/seminar', 'danger')
+            return redirect(url_for('faculty.manage_workshops', faculty_id=faculty_id))
+        
+        # Check permissions
+        if current_user.is_faculty and faculty.user_id != current_user.user_id:
+            flash('You can only delete your own workshops', 'danger')
+            return redirect(url_for('faculty.dashboard'))
+            
+        # Check if profile is frozen
+        if not faculty.can_edit():
+            flash('This profile is currently frozen and cannot be edited', 'warning')
+            return redirect(url_for('faculty.view_profile', faculty_id=faculty_id))
+        
+        # Delete attachment if exists
+        if workshop.attachment_id:
+            attachment = Attachment.query.get(workshop.attachment_id)
+            if attachment:
+                FacultyController._delete_attachment(attachment)
+        
+        # Delete workshop
+        db.session.delete(workshop)
+        db.session.commit()
+        
+        flash('Workshop/Seminar deleted successfully', 'success')
+        return redirect(url_for('faculty.manage_workshops', faculty_id=faculty_id))
+
+    @staticmethod
+    def manage_mdp_fdp(faculty_id):
+        """Manage MDP/FDP programs."""
+        faculty = Faculty.query.get_or_404(faculty_id)
+        
+        # Check permissions
+        if current_user.is_faculty and faculty.user_id != current_user.user_id:
+            flash('You can only manage your own MDP/FDP programs', 'danger')
+            return redirect(url_for('faculty.dashboard'))
+        
+        # Get existing programs
+        programs = MDPFDP.query.filter_by(faculty_id=faculty_id).all()
+        
+        # Get program types from lookup table
+        from config.constants import FDP_MDP_TYPES
+        program_types = LookupTable.query.filter(
+            LookupTable.lookup_type == 'fdp_mdp_type',
+            LookupTable.lookup_value.in_(FDP_MDP_TYPES)
+        ).all()
+        
+        return render_template('faculty/manage_mdp_fdp.html', 
+                            faculty=faculty, 
+                            programs=programs,
+                            program_types=program_types)
+
+    @staticmethod
+    def add_mdp_fdp(faculty_id):
+        """Add a new MDP/FDP program."""
+        faculty = Faculty.query.get_or_404(faculty_id)
+        
+        # Check permissions
+        if current_user.is_faculty and faculty.user_id != current_user.user_id:
+            flash('You can only add to your own profile', 'danger')
+            return redirect(url_for('faculty.dashboard'))
+            
+        # Check if profile is frozen
+        if not faculty.can_edit():
+            flash('This profile is currently frozen and cannot be edited', 'warning')
+            return redirect(url_for('faculty.view_profile', faculty_id=faculty_id))
+        
+        # Get program types from lookup table
+        from config.constants import FDP_MDP_TYPES
+        program_types = LookupTable.query.filter(
+            LookupTable.lookup_type == 'fdp_mdp_type',
+            LookupTable.lookup_value.in_(FDP_MDP_TYPES)
+        ).all()
+        
+        if request.method == 'POST':
+            # Get form data
+            title = request.form.get('title')
+            type_id = request.form.get('type_id')
+            location = request.form.get('location')
+            organized_by = request.form.get('organized_by')
+            start_date = request.form.get('start_date')
+            end_date = request.form.get('end_date')
+            description = request.form.get('description')
+            
+            # Validation
+            if not title:
+                flash('Program title is required', 'danger')
+                return redirect(url_for('faculty.add_mdp_fdp', faculty_id=faculty_id))
+            
+            # Create new program
+            program = MDPFDP(
+                faculty_id=faculty_id,
+                title=title,
+                type_id=type_id,
+                location=location,
+                organized_by=organized_by,
+                start_date=datetime.strptime(start_date, '%Y-%m-%d') if start_date else None,
+                end_date=datetime.strptime(end_date, '%Y-%m-%d') if end_date else None,
+                description=description
+            )
+            
+            # Handle attachment upload
+            if 'attachment' in request.files and request.files['attachment'].filename:
+                attachment_file = request.files['attachment']
+                attachment = FacultyController._save_attachment(attachment_file, 'attachment')
+                program.attachment_id = attachment.attachment_id
+            
+            db.session.add(program)
+            db.session.commit()
+            
+            flash('FDP/MDP program added successfully', 'success')
+            return redirect(url_for('faculty.manage_mdp_fdp', faculty_id=faculty_id))
+        
+        return render_template('faculty/add_mdp_fdp.html', 
+                            faculty=faculty,
+                            program_types=program_types)
+
+    @staticmethod
+    def delete_mdp_fdp(faculty_id, program_id):
+        """Delete an MDP/FDP program."""
+        faculty = Faculty.query.get_or_404(faculty_id)
+        program = MDPFDP.query.get_or_404(program_id)
+        
+        # Check if program belongs to the faculty
+        if program.faculty_id != faculty.faculty_id:
+            flash('Invalid FDP/MDP program', 'danger')
+            return redirect(url_for('faculty.manage_mdp_fdp', faculty_id=faculty_id))
+        
+        # Check permissions
+        if current_user.is_faculty and faculty.user_id != current_user.user_id:
+            flash('You can only delete your own programs', 'danger')
+            return redirect(url_for('faculty.dashboard'))
+            
+        # Check if profile is frozen
+        if not faculty.can_edit():
+            flash('This profile is currently frozen and cannot be edited', 'warning')
+            return redirect(url_for('faculty.view_profile', faculty_id=faculty_id))
+        
+        # Delete attachment if exists
+        if program.attachment_id:
+            attachment = Attachment.query.get(program.attachment_id)
+            if attachment:
+                FacultyController._delete_attachment(attachment)
+        
+        # Delete program
+        db.session.delete(program)
+        db.session.commit()
+        
+        flash('FDP/MDP program deleted successfully', 'success')
+        return redirect(url_for('faculty.manage_mdp_fdp', faculty_id=faculty_id))
+
+    @staticmethod
+    def manage_awards(faculty_id):
+        """Manage honours and awards."""
+        faculty = Faculty.query.get_or_404(faculty_id)
+        
+        # Check permissions
+        if current_user.is_faculty and faculty.user_id != current_user.user_id:
+            flash('You can only manage your own awards', 'danger')
+            return redirect(url_for('faculty.dashboard'))
+        
+        # Get existing awards
+        awards = HonoursAward.query.filter_by(faculty_id=faculty_id).all()
+        
+        # Get award categories from lookup table
+        from config.constants import AWARD_CATEGORIES
+        categories = LookupTable.query.filter(
+            LookupTable.lookup_type == 'award_category',
+            LookupTable.lookup_value.in_(AWARD_CATEGORIES)
+        ).all()
+        
+        return render_template('faculty/manage_awards.html', 
+                            faculty=faculty, 
+                            awards=awards,
+                            categories=categories)
+
+    @staticmethod
+    def add_award(faculty_id):
+        """Add a new honour or award."""
+        faculty = Faculty.query.get_or_404(faculty_id)
+        
+        # Check permissions
+        if current_user.is_faculty and faculty.user_id != current_user.user_id:
+            flash('You can only add to your own profile', 'danger')
+            return redirect(url_for('faculty.dashboard'))
+            
+        # Check if profile is frozen
+        if not faculty.can_edit():
+            flash('This profile is currently frozen and cannot be edited', 'warning')
+            return redirect(url_for('faculty.view_profile', faculty_id=faculty_id))
+        
+        # Get award categories from lookup table
+        from config.constants import AWARD_CATEGORIES
+        categories = LookupTable.query.filter(
+            LookupTable.lookup_type == 'award_category',
+            LookupTable.lookup_value.in_(AWARD_CATEGORIES)
+        ).all()
+        
+        if request.method == 'POST':
+            # Get form data
+            award_title = request.form.get('award_title')
+            awarded_by = request.form.get('awarded_by')
+            date = request.form.get('date')
+            category_id = request.form.get('category_id')
+            description = request.form.get('description')
+            
+            # Validation
+            if not award_title:
+                flash('Award title is required', 'danger')
+                return redirect(url_for('faculty.add_award', faculty_id=faculty_id))
+            
+            # Create new award
+            award = HonoursAward(
+                faculty_id=faculty_id,
+                award_title=award_title,
+                awarded_by=awarded_by,
+                date=datetime.strptime(date, '%Y-%m-%d') if date else None,
+                category_id=category_id,
+                description=description
+            )
+            
+            # Handle attachment upload
+            if 'attachment' in request.files and request.files['attachment'].filename:
+                attachment_file = request.files['attachment']
+                attachment = FacultyController._save_attachment(attachment_file, 'attachment')
+                award.attachment_id = attachment.attachment_id
+            
+            db.session.add(award)
+            db.session.commit()
+            
+            flash('Honour/Award added successfully', 'success')
+            return redirect(url_for('faculty.manage_awards', faculty_id=faculty_id))
+        
+        return render_template('faculty/add_award.html', 
+                            faculty=faculty,
+                            categories=categories)
+
+    @staticmethod
+    def delete_award(faculty_id, award_id):
+        """Delete an honour or award."""
+        faculty = Faculty.query.get_or_404(faculty_id)
+        award = HonoursAward.query.get_or_404(award_id)
+        
+        # Check if award belongs to the faculty
+        if award.faculty_id != faculty.faculty_id:
+            flash('Invalid honour/award', 'danger')
+            return redirect(url_for('faculty.manage_awards', faculty_id=faculty_id))
+        
+        # Check permissions
+        if current_user.is_faculty and faculty.user_id != current_user.user_id:
+            flash('You can only delete your own awards', 'danger')
+            return redirect(url_for('faculty.dashboard'))
+            
+        # Check if profile is frozen
+        if not faculty.can_edit():
+            flash('This profile is currently frozen and cannot be edited', 'warning')
+            return redirect(url_for('faculty.view_profile', faculty_id=faculty_id))
+        
+        # Delete attachment if exists
+        if award.attachment_id:
+            attachment = Attachment.query.get(award.attachment_id)
+            if attachment:
+                FacultyController._delete_attachment(attachment)
+        
+        # Delete award
+        db.session.delete(award)
+        db.session.commit()
+        
+        flash('Honour/Award deleted successfully', 'success')
+        return redirect(url_for('faculty.manage_awards', faculty_id=faculty_id))
+
+    @staticmethod
+    def manage_projects(faculty_id):
+        """Manage research and consultancy projects."""
+        faculty = Faculty.query.get_or_404(faculty_id)
+        
+        # Check permissions
+        if current_user.is_faculty and faculty.user_id != current_user.user_id:
+            flash('You can only manage your own projects', 'danger')
+            return redirect(url_for('faculty.dashboard'))
+        
+        # Get existing projects
+        projects = ResearchConsultancy.query.filter_by(faculty_id=faculty_id).all()
+        
+        # Get funding agencies from lookup table
+        funding_agencies = LookupTable.query.filter(
+            LookupTable.lookup_type == 'funding_agency'
+        ).all()
+        
+        return render_template('faculty/manage_projects.html', 
+                            faculty=faculty, 
+                            projects=projects,
+                            funding_agencies=funding_agencies)
+
+    @staticmethod
+    def add_project(faculty_id):
+        """Add a new research or consultancy project."""
+        faculty = Faculty.query.get_or_404(faculty_id)
+        
+        # Check permissions
+        if current_user.is_faculty and faculty.user_id != current_user.user_id:
+            flash('You can only add to your own profile', 'danger')
+            return redirect(url_for('faculty.dashboard'))
+            
+        # Check if profile is frozen
+        if not faculty.can_edit():
+            flash('This profile is currently frozen and cannot be edited', 'warning')
+            return redirect(url_for('faculty.view_profile', faculty_id=faculty_id))
+        
+        # Get funding agencies from lookup table
+        funding_agencies = LookupTable.query.filter(
+            LookupTable.lookup_type == 'funding_agency'
+        ).all()
+        
+        if request.method == 'POST':
+            # Get form data
+            project_title = request.form.get('project_title')
+            agency_id = request.form.get('agency_id')
+            start_date = request.form.get('start_date')
+            end_date = request.form.get('end_date')
+            status = request.form.get('status')
+            description = request.form.get('description')
+            
+            # Validation
+            if not project_title:
+                flash('Project title is required', 'danger')
+                return redirect(url_for('faculty.add_project', faculty_id=faculty_id))
+            
+            # Create new project
+            project = ResearchConsultancy(
+                faculty_id=faculty_id,
+                project_title=project_title,
+                agency_id=agency_id,
+                start_date=datetime.strptime(start_date, '%Y-%m-%d') if start_date else None,
+                end_date=datetime.strptime(end_date, '%Y-%m-%d') if end_date else None,
+                status=status,
+                description=description
+            )
+            
+            # Handle attachment upload
+            if 'attachment' in request.files and request.files['attachment'].filename:
+                attachment_file = request.files['attachment']
+                attachment = FacultyController._save_attachment(attachment_file, 'attachment')
+                project.attachment_id = attachment.attachment_id
+            
+            db.session.add(project)
+            db.session.commit()
+            
+            flash('Research/Consultancy project added successfully', 'success')
+            return redirect(url_for('faculty.manage_projects', faculty_id=faculty_id))
+        
+        return render_template('faculty/add_project.html', 
+                            faculty=faculty,
+                            funding_agencies=funding_agencies)
+
+    @staticmethod
+    def delete_project(faculty_id, project_id):
+        """Delete a research or consultancy project."""
+        faculty = Faculty.query.get_or_404(faculty_id)
+        project = ResearchConsultancy.query.get_or_404(project_id)
+        
+        # Check if project belongs to the faculty
+        if project.faculty_id != faculty.faculty_id:
+            flash('Invalid research/consultancy project', 'danger')
+            return redirect(url_for('faculty.manage_projects', faculty_id=faculty_id))
+        
+        # Check permissions
+        if current_user.is_faculty and faculty.user_id != current_user.user_id:
+            flash('You can only delete your own projects', 'danger')
+            return redirect(url_for('faculty.dashboard'))
+            
+        # Check if profile is frozen
+        if not faculty.can_edit():
+            flash('This profile is currently frozen and cannot be edited', 'warning')
+            return redirect(url_for('faculty.view_profile', faculty_id=faculty_id))
+        
+        # Delete attachment if exists
+        if project.attachment_id:
+            attachment = Attachment.query.get(project.attachment_id)
+            if attachment:
+                FacultyController._delete_attachment(attachment)
+        
+        # Delete project
+        db.session.delete(project)
+        db.session.commit()
+        
+        flash('Research/Consultancy project deleted successfully', 'success')
+        return redirect(url_for('faculty.manage_projects', faculty_id=faculty_id))

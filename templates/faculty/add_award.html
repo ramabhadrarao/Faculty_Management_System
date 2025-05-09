@@ -1,0 +1,72 @@
+<!-- templates/faculty/add_award.html -->
+{% extends "base.html" %}
+
+{% block title %}Add Honour/Award - Faculty Management System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Add Honour/Award</h2>
+                <div class="page-pretitle">Add a new honour or award</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-cards">
+            <div class="col-12">
+                <form action="{{ url_for('faculty.add_award', faculty_id=faculty.faculty_id) }}" method="POST" enctype="multipart/form-data" class="card">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="card-header">
+                        <h3 class="card-title">Honour/Award Details</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label required">Award Title</label>
+                                <input type="text" name="award_title" class="form-control" placeholder="Title of the Honour/Award" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Awarded By</label>
+                                <input type="text" name="awarded_by" class="form-control" placeholder="Awarding Organization/Institution">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Category</label>
+                                <select name="category_id" class="form-select">
+                                    <option value="">Select Category</option>
+                                    {% for category in categories %}
+                                        <option value="{{ category.lookup_id }}">{{ category.lookup_value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date</label>
+                                <input type="date" name="date" class="form-control">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" rows="3" placeholder="Description of the honour/award and its significance"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Certificate</label>
+                            <input type="file" name="attachment" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                            <small class="form-hint">Upload your award certificate or proof</small>
+                        </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <button type="submit" class="btn btn-primary">Add Honour/Award</button>
+                        <a href="{{ url_for('faculty.manage_awards', faculty_id=faculty.faculty_id) }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

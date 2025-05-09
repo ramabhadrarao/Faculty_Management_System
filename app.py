@@ -114,6 +114,7 @@ def create_app(config_name='default'):
     with app.app_context():
         # Only create initial roles, db.create_all() is no longer needed
         _create_initial_roles()
+        _create_lookup_tables()  # Add this line
     
     return app
 
@@ -158,6 +159,47 @@ def _create_initial_roles():
     
     db.session.commit()
 
+def _create_lookup_tables():
+    """Create the initial lookup table values if they don't exist."""
+    from models.faculty import LookupTable
+    from config.constants import PUBLICATION_TYPES, WORKSHOP_TYPES, FDP_MDP_TYPES, AWARD_CATEGORIES
+    
+    # Create publication types
+    for value in PUBLICATION_TYPES:
+        if not LookupTable.query.filter_by(lookup_type='publication_type', lookup_value=value).first():
+            lookup = LookupTable(lookup_type='publication_type', lookup_value=value)
+            db.session.add(lookup)
+    
+    # Create workshop types
+    for value in WORKSHOP_TYPES:
+        if not LookupTable.query.filter_by(lookup_type='workshop_type', lookup_value=value).first():
+            lookup = LookupTable(lookup_type='workshop_type', lookup_value=value)
+            db.session.add(lookup)
+    
+    # Create FDP/MDP types
+    for value in FDP_MDP_TYPES:
+        if not LookupTable.query.filter_by(lookup_type='fdp_mdp_type', lookup_value=value).first():
+            lookup = LookupTable(lookup_type='fdp_mdp_type', lookup_value=value)
+            db.session.add(lookup)
+    
+    # Create award categories
+    for value in AWARD_CATEGORIES:
+        if not LookupTable.query.filter_by(lookup_type='award_category', lookup_value=value).first():
+            lookup = LookupTable(lookup_type='award_category', lookup_value=value)
+            db.session.add(lookup)
+    
+    # Create some common funding agencies
+    funding_agencies = [
+        'UGC', 'AICTE', 'DST', 'DBT', 'CSIR', 'ICSSR', 'MoE', 
+        'Industry Sponsored', 'University Funded', 'Self-Funded', 'Other'
+    ]
+    
+    for value in funding_agencies:
+        if not LookupTable.query.filter_by(lookup_type='funding_agency', lookup_value=value).first():
+            lookup = LookupTable(lookup_type='funding_agency', lookup_value=value)
+            db.session.add(lookup)
+    
+    db.session.commit()
 
 if __name__ == '__main__':
     app = create_app(os.getenv('FLASK_ENV', 'development'))

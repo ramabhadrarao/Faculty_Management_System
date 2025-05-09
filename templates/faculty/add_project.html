@@ -1,0 +1,81 @@
+<!-- templates/faculty/add_project.html -->
+{% extends "base.html" %}
+
+{% block title %}Add Research Project - Faculty Management System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Add Research/Consultancy Project</h2>
+                <div class="page-pretitle">Add a new research or consultancy project</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-cards">
+            <div class="col-12">
+                <form action="{{ url_for('faculty.add_project', faculty_id=faculty.faculty_id) }}" method="POST" enctype="multipart/form-data" class="card">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="card-header">
+                        <h3 class="card-title">Project Details</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label required">Project Title</label>
+                                <input type="text" name="project_title" class="form-control" placeholder="Project Title" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Funding Agency</label>
+                                <select name="agency_id" class="form-select">
+                                    <option value="">Select Funding Agency</option>
+                                    {% for agency in funding_agencies %}
+                                        <option value="{{ agency.lookup_id }}">{{ agency.lookup_value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="">Select Status</option>
+                                    <option value="Ongoing">Ongoing</option>
+                                    <option value="Completed">Completed</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Start Date</label>
+                                <input type="date" name="start_date" class="form-control">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">End Date</label>
+                                <input type="date" name="end_date" class="form-control">
+                                <small class="form-hint">Leave blank if project is ongoing</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Project Description</label>
+                            <textarea name="description" class="form-control" rows="4" placeholder="Description of the project, objectives, outcomes, etc."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Project Document</label>
+                            <input type="file" name="attachment" class="form-control" accept=".pdf,.doc,.docx">
+                            <small class="form-hint">Upload project proposal, report, or other related documents</small>
+                        </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <button type="submit" class="btn btn-primary">Add Project</button>
+                        <a href="{{ url_for('faculty.manage_projects', faculty_id=faculty.faculty_id) }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

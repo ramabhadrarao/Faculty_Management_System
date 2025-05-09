@@ -1,0 +1,77 @@
+<!-- templates/faculty/add_publication.html -->
+{% extends "base.html" %}
+
+{% block title %}Add Publication - Faculty Management System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Add Research Publication</h2>
+                <div class="page-pretitle">Add a new research publication</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-cards">
+            <div class="col-12">
+                <form action="{{ url_for('faculty.add_publication', faculty_id=faculty.faculty_id) }}" method="POST" enctype="multipart/form-data" class="card">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="card-header">
+                        <h3 class="card-title">Publication Details</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label required">Title</label>
+                                <input type="text" name="title" class="form-control" placeholder="Publication Title" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Journal/Conference Name</label>
+                                <input type="text" name="journal_name" class="form-control" placeholder="Journal or Conference Name">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Publication Type</label>
+                                <select name="type_id" class="form-select">
+                                    <option value="">Select Type</option>
+                                    {% for type in publication_types %}
+                                        <option value="{{ type.lookup_id }}">{{ type.lookup_value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Publication Date</label>
+                                <input type="date" name="publication_date" class="form-control">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">DOI</label>
+                                <input type="text" name="doi" class="form-control" placeholder="Digital Object Identifier">
+                                <small class="form-hint">E.g., 10.1000/xyz123</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Abstract/Description</label>
+                            <textarea name="description" class="form-control" rows="5" placeholder="Abstract or brief description of the publication"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Paper Attachment</label>
+                            <input type="file" name="attachment" class="form-control" accept=".pdf,.doc,.docx">
+                            <small class="form-hint">Upload your research paper (PDF or DOC format)</small>
+                        </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <button type="submit" class="btn btn-primary">Add Publication</button>
+                        <a href="{{ url_for('faculty.manage_publications', faculty_id=faculty.faculty_id) }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

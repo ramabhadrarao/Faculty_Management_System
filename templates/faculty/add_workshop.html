@@ -1,0 +1,76 @@
+<!-- templates/faculty/add_workshop.html -->
+{% extends "base.html" %}
+
+{% block title %}Add Workshop/Seminar - Faculty Management System{% endblock %}
+
+{% block content %}
+<div class="page-header d-print-none">
+    <div class="container-xl">
+        <div class="row g-2 align-items-center">
+            <div class="col">
+                <h2 class="page-title">Add Workshop/Seminar</h2>
+                <div class="page-pretitle">Add a new workshop or seminar</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="page-body">
+    <div class="container-xl">
+        <div class="row row-cards">
+            <div class="col-12">
+                <form action="{{ url_for('faculty.add_workshop', faculty_id=faculty.faculty_id) }}" method="POST" enctype="multipart/form-data" class="card">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="card-header">
+                        <h3 class="card-title">Workshop/Seminar Details</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label required">Title</label>
+                                <input type="text" name="title" class="form-control" placeholder="Workshop/Seminar Title" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Type</label>
+                                <select name="type_id" class="form-select">
+                                    <option value="">Select Type</option>
+                                    {% for type in workshop_types %}
+                                        <option value="{{ type.lookup_id }}">{{ type.lookup_value }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Organized By</label>
+                                <input type="text" name="organized_by" class="form-control" placeholder="Organizing Institution/Organization">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Location</label>
+                                <input type="text" name="location" class="form-control" placeholder="Venue/Location">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Date</label>
+                                <input type="date" name="date" class="form-control">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" rows="3" placeholder="Brief description of the workshop/seminar"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Certificate</label>
+                            <input type="file" name="attachment" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+                            <small class="form-hint">Upload your participation or presentation certificate</small>
+                        </div>
+                    </div>
+                    <div class="card-footer text-end">
+                        <button type="submit" class="btn btn-primary">Add Workshop/Seminar</button>
+                        <a href="{{ url_for('faculty.manage_workshops', faculty_id=faculty.faculty_id) }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
